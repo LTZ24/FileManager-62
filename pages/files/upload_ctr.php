@@ -101,25 +101,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: #ffffff;
-            padding: 1.5rem;
+            padding: 1rem;
+            overflow-x: hidden;
         }
 
         .upload-container {
-            max-width: 600px;
+            max-width: 100%;
             margin: 0 auto;
-        }
-
-        h2 {
-            color: #1e293b;
-            margin-bottom: 1.5rem;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        h2 i {
-            color: #50e3c2;
         }
 
         .alert {
@@ -268,24 +256,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
 
         @media (max-width: 768px) {
             body {
-                padding: 1rem;
+                padding: 0.75rem;
             }
 
-            h2 {
-                font-size: 1.25rem;
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            label {
+                font-size: 0.85rem;
+            }
+
+            select, input[type="file"] {
+                padding: 0.6rem;
+                font-size: 0.9rem;
             }
 
             .btn {
                 width: 100%;
                 justify-content: center;
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .file-requirements {
+                padding: 0.75rem;
+            }
+
+            .file-requirements h4 {
+                font-size: 0.85rem;
+            }
+
+            .file-requirements li {
+                font-size: 0.8rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="upload-container">
-        <h2><i class="fas fa-cloud-upload-alt"></i> Upload File</h2>
-
         <?php if ($success): ?>
             <div class="alert alert-success">
                 <i class="fas fa-check-circle"></i>
