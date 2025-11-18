@@ -23,9 +23,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             if (addLinkToSheets($title, $url, $category, $description)) {
-                // Clear cache
-                unset($_SESSION["category_{$category}_links"]);
-                unset($_SESSION["category_{$category}_links_time"]);
+                // Clear all links cache
+                foreach (array_keys($_SESSION) as $key) {
+                    if (strpos($key, 'links_cache_') === 0) {
+                        unset($_SESSION[$key]);
+                    }
+                }
                 
                 $success = 'Link berhasil ditambahkan!';
             } else {

@@ -35,24 +35,23 @@ function getCategoryFiles($folderId) {
 }
 
 // Get Links from Sheets
-function getCategoryLinks($sheetId) {
+function getCategoryLinks($sheetId, $category) {
     try {
         $client = getGoogleClient();
         $sheetsService = new Google_Service_Sheets($client);
         
-        $range = 'Sheet1!A2:D'; // Changed from 'Links!A2:D'
+        $range = 'Sheet1!A2:E';
         $response = $sheetsService->spreadsheets_values->get($sheetId, $range);
         $values = $response->getValues();
         
         $links = [];
         if (!empty($values)) {
             foreach ($values as $row) {
-                if (count($row) >= 2) { // At least title and URL
+                if (count($row) >= 2 && isset($row[4]) && strtolower($row[4]) === strtolower($category)) {
                     $links[] = [
                         'title' => $row[0] ?? '',
                         'url' => $row[1] ?? '',
-                        'description' => $row[2] ?? '',
-                        'date' => $row[3] ?? date('Y-m-d')
+                        'date' => $row[2] ?? date('Y-m-d')
                     ];
                 }
             }
@@ -65,24 +64,23 @@ function getCategoryLinks($sheetId) {
 }
 
 // Get Forms from Sheets
-function getCategoryForms($sheetId) {
+function getCategoryForms($sheetId, $category) {
     try {
         $client = getGoogleClient();
         $sheetsService = new Google_Service_Sheets($client);
         
-        $range = 'Sheet2!A2:D'; // Changed from 'Forms!A2:D'
+        $range = 'Sheet2!A2:E';
         $response = $sheetsService->spreadsheets_values->get($sheetId, $range);
         $values = $response->getValues();
         
         $forms = [];
         if (!empty($values)) {
             foreach ($values as $row) {
-                if (count($row) >= 2) { // At least title and URL
+                if (count($row) >= 2 && isset($row[4]) && strtolower($row[4]) === strtolower($category)) {
                     $forms[] = [
                         'title' => $row[0] ?? '',
                         'url' => $row[1] ?? '',
-                        'description' => $row[2] ?? '',
-                        'date' => $row[3] ?? date('Y-m-d')
+                        'date' => $row[2] ?? date('Y-m-d')
                     ];
                 }
             }
@@ -113,7 +111,7 @@ if (isset($_SESSION[$linksCacheKey]) &&
     (time() - $_SESSION[$linksCacheKey . '_time']) < $cacheTime) {
     $links = $_SESSION[$linksCacheKey];
 } else {
-    $links = getCategoryLinks($sheetId);
+    $links = getCategoryLinks($sheetId, $categoryName);
     $_SESSION[$linksCacheKey] = $links;
     $_SESSION[$linksCacheKey . '_time'] = time();
 }
@@ -125,7 +123,7 @@ if (isset($_SESSION[$formsCacheKey]) &&
     (time() - $_SESSION[$formsCacheKey . '_time']) < $cacheTime) {
     $forms = $_SESSION[$formsCacheKey];
 } else {
-    $forms = getCategoryForms($sheetId);
+    $forms = getCategoryForms($sheetId, $categoryName);
     $_SESSION[$formsCacheKey] = $forms;
     $_SESSION[$formsCacheKey . '_time'] = time();
 }

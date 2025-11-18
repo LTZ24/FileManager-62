@@ -23,9 +23,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             if (addFormToSheets($title, $url, $category, $description)) {
-                // Clear cache
-                unset($_SESSION["category_{$category}_forms"]);
-                unset($_SESSION["category_{$category}_forms_time"]);
+                // Clear all forms cache
+                foreach (array_keys($_SESSION) as $key) {
+                    if (strpos($key, 'forms_cache_') === 0) {
+                        unset($_SESSION[$key]);
+                    }
+                }
                 
                 $success = 'Form berhasil ditambahkan!';
             } else {
