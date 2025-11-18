@@ -6,6 +6,8 @@ requireLogin();
 
 $error = '';
 $success = '';
+$isModal = isset($_GET['modal']) && $_GET['modal'] == '1';
+$selectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
 $categories = getLinkCategories();
 
@@ -29,7 +31,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unset($_SESSION['dashboard_cache_time']);
                 
                 $success = 'Link berhasil ditambahkan!';
-                header("refresh:2;url=index.php?success=Link berhasil ditambahkan&category=" . $category);
+                
+                if ($isModal) {
+                    echo "<script>
+                        if (window.parent) {
+                            window.parent.postMessage('link_added', '*');
+                        }
+                        setTimeout(function() {
+                            if (window.parent) {
+                                window.parent.closeLinkModal();
+                            }
+                        }, 1500);
+                    </script>";
+                } else {
+                    header("refresh:2;url=index.php?success=Link berhasil ditambahkan&category=" . $category);
+                }
             } else {
                 $error = 'Gagal menambahkan link ke Google Sheets!';
             }
@@ -198,7 +214,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
 </head>
-<body>
+<body<?php echo $isModal ? ' style="background: white;"' : ''; ?>>
+    <?php if (!$isModal): ?>
     <?php include __DIR__ . '/../../includes/sidebar.php'; ?>
     
     <div class="main-content">
@@ -212,6 +229,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="fas fa-arrow-left"></i> Kembali
                 </a>
             </div>
+    <?php else: ?>
+    <div style="padding: 1.5rem;">
+    <?php endif; ?>
             
             <?php if ($success): ?>
                 <div class="alert alert-success" data-persistent>
@@ -235,6 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <form method="POST" action="">
+                    <?php if (!$selectedCategory): ?>
                     <div class="form-group">
                         <label for="category">
                             <i class="fas fa-folder"></i> Kategori
@@ -250,6 +271,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </select>
                         <small><i class="fas fa-info-circle"></i> Pilih kategori sesuai dengan jenis link</small>
                     </div>
+                    <?php else: ?>
+                    <input type="hidden" name="category" value="<?php echo htmlspecialchars($selectedCategory); ?>">
+                    <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+                        <i class="fas fa-info-circle"></i>
+                        Tambah link ke kategori: <strong><?php echo $categories[$selectedCategory]['name']; ?></strong>
+                    </div>
+                    <?php endif; ?>
                     
                     <div class="form-group">
                         <label for="title">
@@ -275,9 +303,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     
                     <div class="form-actions">
+                        <?php if (!$isModal): ?>
                         <a href="index.php" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Batal
                         </a>
+                        <?php endif; ?>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> Simpan Link
                         </button>
@@ -285,9 +315,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </form>
             </div>
             
+            <?php if (!$isModal): ?>
             <?php include __DIR__ . '/../../includes/footer.php'; ?>
         </div>
     </div>
+    <?php else: ?>
+    </div>
+    <?php endif; ?>
     
     <script src="<?php echo BASE_URL; ?>/assets/js/ajax.js"></script>
     <script src="<?php echo BASE_URL; ?>/assets/js/main.js"></script>

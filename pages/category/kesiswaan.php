@@ -40,14 +40,14 @@ function getCategoryLinks($sheetId) {
         $client = getGoogleClient();
         $sheetsService = new Google_Service_Sheets($client);
         
-        $range = 'Links!A2:D';
+        $range = 'Sheet1!A2:D'; // Changed from 'Links!A2:D'
         $response = $sheetsService->spreadsheets_values->get($sheetId, $range);
         $values = $response->getValues();
         
         $links = [];
         if (!empty($values)) {
             foreach ($values as $row) {
-                if (count($row) >= 3) {
+                if (count($row) >= 2) { // At least title and URL
                     $links[] = [
                         'title' => $row[0] ?? '',
                         'url' => $row[1] ?? '',
@@ -59,6 +59,7 @@ function getCategoryLinks($sheetId) {
         }
         return $links;
     } catch (Exception $e) {
+        error_log("Error getting links: " . $e->getMessage());
         return [];
     }
 }
@@ -69,14 +70,14 @@ function getCategoryForms($sheetId) {
         $client = getGoogleClient();
         $sheetsService = new Google_Service_Sheets($client);
         
-        $range = 'Forms!A2:D';
+        $range = 'Sheet2!A2:D'; // Changed from 'Forms!A2:D'
         $response = $sheetsService->spreadsheets_values->get($sheetId, $range);
         $values = $response->getValues();
         
         $forms = [];
         if (!empty($values)) {
             foreach ($values as $row) {
-                if (count($row) >= 3) {
+                if (count($row) >= 2) { // At least title and URL
                     $forms[] = [
                         'title' => $row[0] ?? '',
                         'url' => $row[1] ?? '',
@@ -88,6 +89,7 @@ function getCategoryForms($sheetId) {
         }
         return $forms;
     } catch (Exception $e) {
+        error_log("Error getting forms: " . $e->getMessage());
         return [];
     }
 }
