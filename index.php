@@ -112,6 +112,50 @@ requireLogin();
                 }
                 ?>
                 
+                <div class="category-section">
+                    <h2>Kategori</h2>
+                    <div class="category-grid">
+                        <a href="<?php echo BASE_URL; ?>/pages/files/index.php?category=kesiswaan" class="category-card">
+                            <i class="fas fa-user-graduate" style="color: #3b82f6;"></i>
+                            <h3>Kesiswaan</h3>
+                        </a>
+                        <a href="<?php echo BASE_URL; ?>/pages/files/index.php?category=kurikulum" class="category-card">
+                            <i class="fas fa-book" style="color: #10b981;"></i>
+                            <h3>Kurikulum</h3>
+                        </a>
+                        <a href="<?php echo BASE_URL; ?>/pages/files/index.php?category=sapras-humas" class="category-card">
+                            <i class="fas fa-building" style="color: #f59e0b;"></i>
+                            <h3>Sapras & Humas</h3>
+                        </a>
+                        <a href="<?php echo BASE_URL; ?>/pages/files/index.php?category=tata-usaha" class="category-card">
+                            <i class="fas fa-briefcase" style="color: #8b5cf6;"></i>
+                            <h3>Tata Usaha</h3>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <h2>Aksi Cepat</h2>
+                    <div class="action-grid">
+                        <a href="<?php echo BASE_URL; ?>/pages/links/index.php" class="action-card">
+                            <i class="fas fa-link"></i>
+                            <span>Kelola Links</span>
+                        </a>
+                        <a href="<?php echo BASE_URL; ?>/pages/forms/index.php" class="action-card">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Kelola Forms</span>
+                        </a>
+                        <a href="<?php echo BASE_URL; ?>/pages/files/index.php" class="action-card">
+                            <i class="fas fa-folder-open"></i>
+                            <span>File Manager</span>
+                        </a>
+                        <button onclick="refreshPage()" class="action-card" type="button">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                </div>
+                
                 <div class="stats-grid">
                     <!-- Card 1: Storage Google Drive -->
                     <div class="stat-card storage-card">
@@ -200,24 +244,6 @@ requireLogin();
                                 </div>
                             <?php endif; ?>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="quick-actions">
-                    <h2>Aksi Cepat</h2>
-                    <div class="action-buttons">
-                        <a href="<?php echo BASE_URL; ?>/pages/links/index.php" class="btn btn-primary">
-                            <i class="fas fa-link"></i> Kelola Links
-                        </a>
-                        <a href="<?php echo BASE_URL; ?>/pages/forms/index.php" class="btn btn-secondary">
-                            <i class="fas fa-file-alt"></i> Kelola Forms
-                        </a>
-                        <a href="<?php echo BASE_URL; ?>/pages/files/index.php" class="btn btn-success">
-                            <i class="fas fa-folder-open"></i> File Manager
-                        </a>
-                        <button onclick="refreshPage()" class="btn btn-info" type="button">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
                     </div>
                 </div>
             </div>

@@ -660,6 +660,62 @@ body:not(.page-loaded) .sidebar {
     margin-bottom: 2rem;
 }
 
+/* Category Section */
+.category-section {
+    margin-bottom: 2rem;
+}
+
+.category-section h2 {
+    font-size: 1.5rem;
+    color: var(--dark-color);
+    margin-bottom: 1rem;
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.category-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 1rem;
+    text-decoration: none;
+    color: var(--dark-color);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-height: 140px;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-color: currentColor;
+}
+
+.category-card i {
+    font-size: 2.5rem;
+    transition: all 0.3s ease;
+}
+
+.category-card:hover i {
+    transform: scale(1.1);
+}
+
+.category-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    margin: 0;
+}
+
 .stat-card {
     background: white;
     padding: 1.5rem;
@@ -745,7 +801,7 @@ body:not(.page-loaded) .sidebar {
 
 /* Quick Actions */
 .quick-actions {
-    margin-top: 2rem;
+    margin-bottom: 2rem;
 }
 
 .quick-actions h2 {
@@ -754,10 +810,50 @@ body:not(.page-loaded) .sidebar {
     margin-bottom: 1rem;
 }
 
-.action-buttons {
+.action-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 1rem;
+}
+
+.action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem 1rem;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 1rem;
+    text-decoration: none;
+    color: var(--dark-color);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-height: 150px;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+    background: #eff6ff;
+}
+
+.action-card i {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    transition: all 0.3s ease;
+}
+
+.action-card:hover i {
+    transform: scale(1.1);
+}
+
+.action-card span {
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: center;
 }
 
 .btn {
@@ -803,6 +899,16 @@ body:not(.page-loaded) .sidebar {
 .btn-info:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    color: white;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
 }
 
 /* ================================================
@@ -974,8 +1080,38 @@ body:not(.page-loaded) .sidebar {
         padding: 15px;
     }
     
-    .action-buttons {
-        grid-template-columns: 1fr;
+    .action-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .action-card {
+        min-height: 120px;
+        padding: 1.5rem 0.75rem;
+    }
+    
+    .action-card i {
+        font-size: 2rem;
+    }
+    
+    .action-card span {
+        font-size: 0.85rem;
+    }
+    
+    .category-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .category-card {
+        min-height: 120px;
+        padding: 1rem;
+    }
+    
+    .category-card i {
+        font-size: 2rem;
+    }
+    
+    .category-card h3 {
+        font-size: 0.9rem;
     }
 }
 

@@ -1,6 +1,4 @@
-tcp:80 tcp:80/**
- * PWA Installation & Update Handler
- */
+
 
 class PWAManager {
     constructor() {
