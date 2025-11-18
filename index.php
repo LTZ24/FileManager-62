@@ -115,19 +115,19 @@ requireLogin();
                 <div class="category-section">
                     <h2>Kategori</h2>
                     <div class="category-grid">
-                        <a href="<?php echo BASE_URL; ?>/pages/files/index.php?category=kesiswaan" class="category-card">
+                        <a href="<?php echo BASE_URL; ?>/pages/category/kesiswaan.php" class="category-card">
                             <i class="fas fa-user-graduate" style="color: #3b82f6;"></i>
                             <h3>Kesiswaan</h3>
                         </a>
-                        <a href="<?php echo BASE_URL; ?>/pages/files/index.php?category=kurikulum" class="category-card">
+                        <a href="<?php echo BASE_URL; ?>/pages/category/kurikulum.php" class="category-card">
                             <i class="fas fa-book" style="color: #10b981;"></i>
                             <h3>Kurikulum</h3>
                         </a>
-                        <a href="<?php echo BASE_URL; ?>/pages/files/index.php?category=sapras-humas" class="category-card">
+                        <a href="<?php echo BASE_URL; ?>/pages/category/sapras-humas.php" class="category-card">
                             <i class="fas fa-building" style="color: #f59e0b;"></i>
                             <h3>Sapras & Humas</h3>
                         </a>
-                        <a href="<?php echo BASE_URL; ?>/pages/files/index.php?category=tata-usaha" class="category-card">
+                        <a href="<?php echo BASE_URL; ?>/pages/category/tata-usaha.php" class="category-card">
                             <i class="fas fa-briefcase" style="color: #8b5cf6;"></i>
                             <h3>Tata Usaha</h3>
                         </a>

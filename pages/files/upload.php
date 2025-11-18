@@ -37,6 +37,7 @@ $categories = [
 ];
 
 $selectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
+$isModal = isset($_GET['modal']) && $_GET['modal'] == '1';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
     $category = sanitize($_POST['category']);
@@ -76,7 +77,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                     ajaxSuccess($success, ['file_id' => $uploadedFile->id]);
                 }
                 
-                header("refresh:2;url=" . BASE_URL . "/pages/files/index.php?category=" . $category . "&success=" . urlencode($success));
+                // If modal mode, send message to parent and close
+                if ($isModal) {
+                    echo "<script>
+                        if (window.parent) {
+                            window.parent.postMessage('upload_success', '*');
+                        }
+                        setTimeout(function() {
+                            if (window.parent) {
+                                window.parent.closeUploadModal();
+                            }
+                        }, 1500);
+                    </script>";
+                } else {
+                    header("refresh:2;url=" . BASE_URL . "/pages/files/index.php?category=" . $category . "&success=" . urlencode($success));
+                }
             } else {
                 $error = 'Gagal mengupload file ke Google Drive!';
             }
@@ -379,7 +394,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
         }
     </style>
 </head>
-<body>
+<body<?php echo $isModal ? ' style="background: white;"' : ''; ?>>
+    <?php if (!$isModal): ?>
     <?php include __DIR__ . '/../../includes/sidebar.php'; ?>
     
     <div class="main-content">
@@ -387,6 +403,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
         
         <div class="content-wrapper">
             <?php include __DIR__ . '/../../includes/page-navigation.php'; ?>
+    <?php else: ?>
+    <div style="padding: 1.5rem;">
+    <?php endif; ?>
             
             <?php if ($success): ?>
                 <div class="alert alert-success" data-persistent>
@@ -410,13 +429,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                 </div>
                 
                 <form method="POST" action="" enctype="multipart/form-data" id="uploadForm">
+                    <?php if (!$selectedCategory): ?>
                     <div class="form-group">
                         <label>
                             <i class="fas fa-folder"></i> Pilih Kategori
                         </label>
                         <div class="category-selector">
                             <?php foreach ($categories as $key => $cat): ?>
-                                <div class="category-card <?php echo $selectedCategory === $key ? 'selected' : ''; ?>" 
+                                <div class="category-card" 
                                      onclick="selectCategory('<?php echo $key; ?>', this)"
                                      data-category="<?php echo $key; ?>">
                                     <i class="fas fa-<?php echo $cat['icon']; ?>" 
@@ -425,10 +445,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                                 </div>
                             <?php endforeach; ?>
                         </div>
-                        <input type="hidden" name="category" id="categoryInput" 
-                               value="<?php echo htmlspecialchars($selectedCategory); ?>" required>
+                        <input type="hidden" name="category" id="categoryInput" required>
                         <small><i class="fas fa-info-circle"></i> Pilih salah satu kategori sesuai jenis file</small>
                     </div>
+                    <?php else: ?>
+                    <input type="hidden" name="category" id="categoryInput" 
+                           value="<?php echo htmlspecialchars($selectedCategory); ?>" required>
+                    <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+                        <i class="fas fa-info-circle"></i>
+                        Upload ke kategori: <strong><?php echo $categories[$selectedCategory]['name']; ?></strong>
+                    </div>
+                    <?php endif; ?>
                     
                     <div class="form-group">
                         <label for="file">
@@ -547,6 +574,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
             const hasCategory = categoryInput.value !== '';
             submitBtn.disabled = !(hasFile && hasCategory);
         }
+        
+        <?php if ($selectedCategory): ?>
+        // Auto-check form validity if category is pre-selected
+        document.addEventListener('DOMContentLoaded', function() {
+            checkFormValid();
+        });
+        <?php endif; ?>
     </script>
+    <?php if (!$isModal): ?>
 </body>
 </html>
+    <?php else: ?>
+</div>
+</body>
+</html>
+    <?php endif; ?>
