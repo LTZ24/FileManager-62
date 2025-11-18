@@ -106,29 +106,15 @@ if (isset($_SESSION[$filesCacheKey]) &&
     $_SESSION[$filesCacheKey . '_time'] = time();
 }
 
-// Cache links
-$linksCacheKey = "category_{$categoryKey}_links";
-if (isset($_SESSION[$linksCacheKey]) && 
-    isset($_SESSION[$linksCacheKey . '_time']) && 
-    (time() - $_SESSION[$linksCacheKey . '_time']) < $cacheTime) {
-    $links = $_SESSION[$linksCacheKey];
-} else {
-    $links = getCategoryLinks($sheetId);
-    $_SESSION[$linksCacheKey] = $links;
-    $_SESSION[$linksCacheKey . '_time'] = time();
-}
+// Cache links (disable cache for debugging)
+$links = getCategoryLinks($sheetId);
+error_log("KESISWAAN Links count: " . count($links));
+error_log("KESISWAAN Links data: " . print_r($links, true));
 
-// Cache forms
-$formsCacheKey = "category_{$categoryKey}_forms";
-if (isset($_SESSION[$formsCacheKey]) && 
-    isset($_SESSION[$formsCacheKey . '_time']) && 
-    (time() - $_SESSION[$formsCacheKey . '_time']) < $cacheTime) {
-    $forms = $_SESSION[$formsCacheKey];
-} else {
-    $forms = getCategoryForms($sheetId);
-    $_SESSION[$formsCacheKey] = $forms;
-    $_SESSION[$formsCacheKey . '_time'] = time();
-}
+// Cache forms (disable cache for debugging)
+$forms = getCategoryForms($sheetId);
+error_log("KESISWAAN Forms count: " . count($forms));
+error_log("KESISWAAN Forms data: " . print_r($forms, true));
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -578,7 +564,7 @@ if (isset($_SESSION[$formsCacheKey]) &&
     <script>
         // Modal functions
         function openUploadModal() {
-            document.getElementById('uploadFrame').src = '<?php echo BASE_URL; ?>/pages/files/upload.php?category=<?php echo $categoryKey; ?>&modal=1';
+            document.getElementById('uploadFrame').src = '<?php echo BASE_URL; ?>/pages/files/upload_ctr.php?category=<?php echo $categoryKey; ?>';
             document.getElementById('uploadModal').style.display = 'block';
         }
         
@@ -588,7 +574,7 @@ if (isset($_SESSION[$formsCacheKey]) &&
         }
         
         function openLinkModal() {
-            document.getElementById('linkFrame').src = '<?php echo BASE_URL; ?>/pages/links/add.php?category=<?php echo $categoryKey; ?>&modal=1';
+            document.getElementById('linkFrame').src = '<?php echo BASE_URL; ?>/pages/links/add_ctr.php?category=<?php echo $categoryKey; ?>';
             document.getElementById('linkModal').style.display = 'block';
         }
         
@@ -598,7 +584,7 @@ if (isset($_SESSION[$formsCacheKey]) &&
         }
         
         function openFormModal() {
-            document.getElementById('formFrame').src = '<?php echo BASE_URL; ?>/pages/forms/add.php?category=<?php echo $categoryKey; ?>&modal=1';
+            document.getElementById('formFrame').src = '<?php echo BASE_URL; ?>/pages/forms/add_ctr.php?category=<?php echo $categoryKey; ?>';
             document.getElementById('formModal').style.display = 'block';
         }
         
