@@ -163,42 +163,42 @@ if (isset($_SESSION[$formsCacheKey]) &&
         
         .section-container {
             background: white;
-            border-radius: 1rem;
+            border-radius: 0.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
         }
         
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
         }
         
         .section-header h2 {
             margin: 0;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             color: var(--dark-color);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
         
         .filter-bar {
             display: grid;
             grid-template-columns: 1fr auto auto;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
         }
         
         .filter-bar input {
-            padding: 0.75rem 1rem;
-            border: 2px solid var(--border-color);
-            border-radius: 0.5rem;
-            font-size: 0.95rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
         }
         
         .filter-bar input:focus {
@@ -208,33 +208,84 @@ if (isset($_SESSION[$formsCacheKey]) &&
         
         table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            border-collapse: collapse;
+            font-size: 0.875rem;
         }
         
         thead {
-            background: var(--light-color);
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
         }
         
         thead th {
-            padding: 1rem;
+            padding: 0.625rem 0.75rem;
             text-align: left;
             font-weight: 600;
-            color: var(--dark-color);
-            font-size: 0.9rem;
+            color: #475569;
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
         }
         
         tbody tr {
-            border-bottom: 1px solid var(--border-color);
-            transition: all 0.3s;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s;
         }
         
         tbody tr:hover {
-            background: var(--light-color);
+            background: #f8fafc;
         }
         
         tbody td {
-            padding: 1rem;
+            padding: 0.625rem 0.75rem;
+            vertical-align: middle;
+        }
+        
+        tbody td:first-child {
+            font-weight: 500;
+            color: #1e293b;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .file-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            border-radius: 0.375rem;
+            flex-shrink: 0;
+        }
+        
+        .file-icon i {
+            font-size: 1rem;
+            color: <?php echo $categoryColor; ?>;
+        }
+        
+        .file-details {
+            min-width: 0;
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: 500;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+        
+        .file-meta {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.125rem;
         }
         
         .empty-state {
@@ -377,14 +428,14 @@ if (isset($_SESSION[$formsCacheKey]) &&
                 
                 <div class="filter-bar">
                     <input type="text" id="searchFiles" placeholder="Cari file..." onkeyup="filterFiles()">
-                    <select id="sortFiles" onchange="sortFiles()" style="padding: 0.75rem; border: 2px solid var(--border-color); border-radius: 0.5rem;">
+                    <select id="sortFiles" onchange="sortFiles()" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; font-size: 0.875rem;">
                         <option value="modified_desc">Terakhir Diubah (Terbaru)</option>
                         <option value="modified_asc">Terakhir Diubah (Terlama)</option>
                         <option value="name_asc">Nama (A-Z)</option>
                         <option value="name_desc">Nama (Z-A)</option>
                     </select>
-                    <button class="btn btn-secondary" onclick="resetFilesFilter()">
-                        <i class="fas fa-redo"></i> Reset
+                    <button class="btn btn-secondary" onclick="resetFilesFilter()" style="padding: 0.5rem 0.75rem; font-size: 0.875rem;">
+                        <i class="fas fa-redo"></i>
                     </button>
                 </div>
                 
@@ -398,28 +449,38 @@ if (isset($_SESSION[$formsCacheKey]) &&
                     <table id="filesTable">
                         <thead>
                             <tr>
-                                <th>Nama File</th>
-                                <th>Ukuran</th>
-                                <th>Terakhir Diubah</th>
-                                <th>Aksi</th>
+                                <th style="width: 50%;">Nama File</th>
+                                <th style="width: 15%;">Tipe</th>
+                                <th style="width: 12%;">Ukuran</th>
+                                <th style="width: 15%;">Tanggal</th>
+                                <th style="width: 8%; text-align: center;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="filesTableBody">
-                            <?php foreach ($files as $file): ?>
+                            <?php foreach ($files as $file): 
+                                $filename = $file->getName();
+                                $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                            ?>
                                 <tr class="file-row" 
-                                    data-name="<?php echo strtolower($file->getName()); ?>"
+                                    data-name="<?php echo strtolower($filename); ?>"
                                     data-modified="<?php echo strtotime($file->getModifiedTime()); ?>">
                                     <td>
-                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                            <i class="fas fa-file" style="color: <?php echo $categoryColor; ?>;"></i>
-                                            <span style="font-weight: 500;"><?php echo htmlspecialchars($file->getName()); ?></span>
+                                        <div class="file-info">
+                                            <div class="file-icon">
+                                                <i class="fas fa-file-alt"></i>
+                                            </div>
+                                            <div class="file-details">
+                                                <span class="file-name"><?php echo htmlspecialchars($filename); ?></span>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td><?php echo formatFileSize($file->getSize() ?? 0); ?></td>
-                                    <td><?php echo date('d/m/Y H:i', strtotime($file->getModifiedTime())); ?></td>
-                                    <td>
-                                        <a href="<?php echo $file->getWebViewLink(); ?>" target="_blank" class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye"></i> Lihat
+                                    <td style="color: #64748b; font-size: 0.8125rem;"><?php echo strtoupper($ext); ?></td>
+                                    <td style="color: #64748b; font-size: 0.8125rem;"><?php echo formatFileSize($file->getSize() ?? 0); ?></td>
+                                    <td style="color: #64748b; font-size: 0.8125rem;"><?php echo date('d/m/Y', strtotime($file->getModifiedTime())); ?></td>
+                                    <td style="text-align: center;">
+                                        <a href="<?php echo $file->getWebViewLink(); ?>" target="_blank" 
+                                           class="btn btn-sm btn-info" style="padding: 0.375rem 0.625rem; font-size: 0.8125rem;">
+                                            <i class="fas fa-eye"></i>
                                         </a>
                                     </td>
                                 </tr>
@@ -441,8 +502,8 @@ if (isset($_SESSION[$formsCacheKey]) &&
                 <div class="filter-bar">
                     <input type="text" id="searchLinks" placeholder="Cari link..." onkeyup="filterLinks()">
                     <div></div>
-                    <button class="btn btn-secondary" onclick="resetLinksFilter()">
-                        <i class="fas fa-redo"></i> Reset
+                    <button class="btn btn-secondary" onclick="resetLinksFilter()" style="padding: 0.5rem 0.75rem; font-size: 0.875rem;">
+                        <i class="fas fa-redo"></i>
                     </button>
                 </div>
                 
@@ -456,21 +517,29 @@ if (isset($_SESSION[$formsCacheKey]) &&
                     <table id="linksTable">
                         <thead>
                             <tr>
-                                <th>Judul</th>
-                                <th>Deskripsi</th>
-                                <th>Tanggal</th>
-                                <th>Aksi</th>
+                                <th style="width: 70%;">Judul</th>
+                                <th style="width: 20%;">Tanggal</th>
+                                <th style="width: 10%; text-align: center;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="linksTableBody">
                             <?php foreach ($links as $link): ?>
                                 <tr class="link-row" data-title="<?php echo strtolower($link['title']); ?>">
-                                    <td style="font-weight: 500;"><?php echo htmlspecialchars($link['title']); ?></td>
-                                    <td><?php echo htmlspecialchars($link['description']); ?></td>
-                                    <td><?php echo date('d/m/Y', strtotime($link['date'])); ?></td>
                                     <td>
-                                        <a href="<?php echo htmlspecialchars($link['url']); ?>" target="_blank" class="btn btn-sm btn-info">
-                                            <i class="fas fa-external-link-alt"></i> Buka
+                                        <div class="file-info">
+                                            <div class="file-icon">
+                                                <i class="fas fa-link"></i>
+                                            </div>
+                                            <div class="file-details">
+                                                <span class="file-name"><?php echo htmlspecialchars($link['title']); ?></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="color: #64748b; font-size: 0.8125rem;"><?php echo date('d/m/Y', strtotime($link['date'])); ?></td>
+                                    <td style="text-align: center;">
+                                        <a href="<?php echo htmlspecialchars($link['url']); ?>" target="_blank" 
+                                           class="btn btn-sm btn-info" style="padding: 0.375rem 0.625rem; font-size: 0.8125rem;">
+                                            <i class="fas fa-external-link-alt"></i>
                                         </a>
                                     </td>
                                 </tr>
@@ -492,8 +561,8 @@ if (isset($_SESSION[$formsCacheKey]) &&
                 <div class="filter-bar">
                     <input type="text" id="searchForms" placeholder="Cari form..." onkeyup="filterForms()">
                     <div></div>
-                    <button class="btn btn-secondary" onclick="resetFormsFilter()">
-                        <i class="fas fa-redo"></i> Reset
+                    <button class="btn btn-secondary" onclick="resetFormsFilter()" style="padding: 0.5rem 0.75rem; font-size: 0.875rem;">
+                        <i class="fas fa-redo"></i>
                     </button>
                 </div>
                 
@@ -507,21 +576,29 @@ if (isset($_SESSION[$formsCacheKey]) &&
                     <table id="formsTable">
                         <thead>
                             <tr>
-                                <th>Judul</th>
-                                <th>Deskripsi</th>
-                                <th>Tanggal</th>
-                                <th>Aksi</th>
+                                <th style="width: 70%;">Judul</th>
+                                <th style="width: 20%;">Tanggal</th>
+                                <th style="width: 10%; text-align: center;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="formsTableBody">
                             <?php foreach ($forms as $form): ?>
                                 <tr class="form-row" data-title="<?php echo strtolower($form['title']); ?>">
-                                    <td style="font-weight: 500;"><?php echo htmlspecialchars($form['title']); ?></td>
-                                    <td><?php echo htmlspecialchars($form['description']); ?></td>
-                                    <td><?php echo date('d/m/Y', strtotime($form['date'])); ?></td>
                                     <td>
-                                        <a href="<?php echo htmlspecialchars($form['url']); ?>" target="_blank" class="btn btn-sm btn-info">
-                                            <i class="fas fa-external-link-alt"></i> Buka
+                                        <div class="file-info">
+                                            <div class="file-icon">
+                                                <i class="fas fa-file-alt"></i>
+                                            </div>
+                                            <div class="file-details">
+                                                <span class="file-name"><?php echo htmlspecialchars($form['title']); ?></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="color: #64748b; font-size: 0.8125rem;"><?php echo date('d/m/Y', strtotime($form['date'])); ?></td>
+                                    <td style="text-align: center;">
+                                        <a href="<?php echo htmlspecialchars($form['url']); ?>" target="_blank" 
+                                           class="btn btn-sm btn-info" style="padding: 0.375rem 0.625rem; font-size: 0.8125rem;">
+                                            <i class="fas fa-external-link-alt"></i>
                                         </a>
                                     </td>
                                 </tr>

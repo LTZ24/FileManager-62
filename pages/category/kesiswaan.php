@@ -519,9 +519,8 @@ if (isset($_SESSION[$formsCacheKey]) &&
                     <table id="linksTable">
                         <thead>
                             <tr>
-                                <th style="width: 35%;">Judul</th>
-                                <th style="width: 40%;">Deskripsi</th>
-                                <th style="width: 15%;">Tanggal</th>
+                                <th style="width: 70%;">Judul</th>
+                                <th style="width: 20%;">Tanggal</th>
                                 <th style="width: 10%; text-align: center;">Aksi</th>
                             </tr>
                         </thead>
@@ -538,7 +537,6 @@ if (isset($_SESSION[$formsCacheKey]) &&
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="color: #64748b; font-size: 0.8125rem;"><?php echo htmlspecialchars($link['description'] ?: '-'); ?></td>
                                     <td style="color: #64748b; font-size: 0.8125rem;"><?php echo date('d/m/Y', strtotime($link['date'])); ?></td>
                                     <td style="text-align: center;">
                                         <a href="<?php echo htmlspecialchars($link['url']); ?>" target="_blank" 
@@ -580,9 +578,8 @@ if (isset($_SESSION[$formsCacheKey]) &&
                     <table id="formsTable">
                         <thead>
                             <tr>
-                                <th style="width: 35%;">Judul</th>
-                                <th style="width: 40%;">Deskripsi</th>
-                                <th style="width: 15%;">Tanggal</th>
+                                <th style="width: 70%;">Judul</th>
+                                <th style="width: 20%;">Tanggal</th>
                                 <th style="width: 10%; text-align: center;">Aksi</th>
                             </tr>
                         </thead>
@@ -599,7 +596,6 @@ if (isset($_SESSION[$formsCacheKey]) &&
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="color: #64748b; font-size: 0.8125rem;"><?php echo htmlspecialchars($form['description'] ?: '-'); ?></td>
                                     <td style="color: #64748b; font-size: 0.8125rem;"><?php echo date('d/m/Y', strtotime($form['date'])); ?></td>
                                     <td style="text-align: center;">
                                         <a href="<?php echo htmlspecialchars($form['url']); ?>" target="_blank" 
