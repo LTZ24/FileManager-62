@@ -40,7 +40,7 @@ function getCategoryLinks($sheetId, $category) {
         $client = getGoogleClient();
         $sheetsService = new Google_Service_Sheets($client);
         
-        $range = 'Sheet1!A2:E';
+        $range = 'Sheet1!A2:E'; // Title, URL, Created At, Updated At, Category
         $response = $sheetsService->spreadsheets_values->get($sheetId, $range);
         $values = $response->getValues();
         
@@ -69,7 +69,7 @@ function getCategoryForms($sheetId, $category) {
         $client = getGoogleClient();
         $sheetsService = new Google_Service_Sheets($client);
         
-        $range = 'Sheet2!A2:E';
+        $range = 'Sheet2!A2:E'; // Title, URL, Created At, Updated At, Category
         $response = $sheetsService->spreadsheets_values->get($sheetId, $range);
         $values = $response->getValues();
         
