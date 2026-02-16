@@ -217,8 +217,8 @@ if ($isAdmin) {
             justify-content: space-between;
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid #e2e8f0;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
+            background: #fff;
+            color: #1e293b;
         }
         
         .storage-modal-header h3 {
@@ -230,6 +230,10 @@ if ($isAdmin) {
             gap: 10px;
         }
         
+        .storage-modal-header h3 i {
+            color: #64748b;
+        }
+        
         .storage-modal-header-actions {
             display: flex;
             align-items: center;
@@ -237,13 +241,13 @@ if ($isAdmin) {
         }
         
         .storage-modal-close {
-            background: rgba(255,255,255,0.2);
+            background: #f1f5f9;
             border: none;
             width: 32px;
             height: 32px;
             border-radius: 8px;
             cursor: pointer;
-            color: white;
+            color: #64748b;
             font-size: 1.25rem;
             display: flex;
             align-items: center;
@@ -252,7 +256,8 @@ if ($isAdmin) {
         }
         
         .storage-modal-close:hover {
-            background: rgba(255,255,255,0.3);
+            background: #e2e8f0;
+            color: #334155;
         }
         
         .storage-modal-body {
@@ -436,7 +441,8 @@ if ($isAdmin) {
 
         /* ===== Create User Modal Header ===== */
         .create-user-modal-header {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            background: #fff !important;
+            color: #1e293b !important;
         }
 
         /* Info Popup Styles */
@@ -613,7 +619,7 @@ if ($isAdmin) {
         @media (max-width: 768px) {
             .storage-modal {
                 max-width: 100%;
-                max-height: 85vh;
+                max-height: 80vh;
                 border-radius: 16px 16px 0 0;
                 margin-top: auto;
             }
@@ -629,6 +635,7 @@ if ($isAdmin) {
             
             .storage-modal-header {
                 padding: 1rem 1.25rem;
+                flex-shrink: 0;
             }
 
             .modal-tab {
@@ -636,12 +643,23 @@ if ($isAdmin) {
                 padding: 0.75rem 0.5rem;
             }
 
+            .storage-modal-body {
+                max-height: 40vh;
+                overflow-y: auto;
+            }
+
             .tab-panel {
-                padding: 1.25rem;
+                padding: 1rem;
+            }
+
+            .password-confirm-section {
+                flex-shrink: 0;
             }
             
             .storage-modal-footer {
                 flex-direction: column;
+                flex-shrink: 0;
+                padding: 0.75rem 1rem;
             }
             
             .storage-modal-footer .btn {
@@ -963,7 +981,7 @@ if ($isAdmin) {
 
                 <div class="storage-modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeCreateUserModal()">Batal</button>
-                    <button type="submit" class="btn btn-primary" style="background: #10b981; border-color: #10b981;" id="btnCreateUser"><i class="fas fa-user-plus"></i> Buat Akun</button>
+                    <button type="submit" class="btn btn-primary" id="btnCreateUser"><i class="fas fa-user-plus"></i> Buat Akun</button>
                 </div>
             </form>
         </div>
@@ -972,7 +990,7 @@ if ($isAdmin) {
     <!-- ===== Edit User Modal ===== -->
     <div class="storage-modal-overlay" id="editUserModal">
         <div class="storage-modal">
-            <div class="storage-modal-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+            <div class="storage-modal-header">
                 <h3><i class="fas fa-user-edit"></i> Edit Akun</h3>
                 <div class="storage-modal-header-actions">
                     <button type="button" class="storage-modal-close" onclick="closeEditUserModal()">&times;</button>
@@ -1015,7 +1033,7 @@ if ($isAdmin) {
 
                 <div class="storage-modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeEditUserModal()">Batal</button>
-                    <button type="submit" class="btn btn-primary" style="background: #f59e0b; border-color: #f59e0b;" id="btnEditUser"><i class="fas fa-save"></i> Simpan</button>
+                    <button type="submit" class="btn btn-primary" id="btnEditUser"><i class="fas fa-save"></i> Simpan</button>
                 </div>
             </form>
         </div>
