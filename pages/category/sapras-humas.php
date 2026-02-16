@@ -639,6 +639,7 @@ function getCategoryForms($sheetId, $category) {
 
                 tbody.innerHTML = rowsHtml;
 
+                // Handle empty state
                 if (files.length === 0) {
                     if (tableEl) tableEl.style.display = 'none';
                     if (emptyState) emptyState.style.display = '';
@@ -711,6 +712,7 @@ function getCategoryForms($sheetId, $category) {
 
                 tbody.innerHTML = rowsHtml;
 
+                // Handle empty state
                 if (linksData.length === 0) {
                     if (tableEl) tableEl.style.display = 'none';
                     if (emptyState) emptyState.style.display = '';
@@ -783,6 +785,7 @@ function getCategoryForms($sheetId, $category) {
 
                 tbody.innerHTML = rowsHtml;
 
+                // Handle empty state
                 if (formsData.length === 0) {
                     if (tableEl) tableEl.style.display = 'none';
                     if (emptyState) emptyState.style.display = '';
