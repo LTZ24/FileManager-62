@@ -36,8 +36,11 @@ class PWAManager {
         }
         
         try {
-            this.swRegistration = await navigator.serviceWorker.register('/sw.js', {
-                scope: '/'
+            // Auto-detect base path: works on both hosting (root) and localhost (subfolder)
+            const base = new URL('./', window.location).pathname;
+
+            this.swRegistration = await navigator.serviceWorker.register(base + 'sw.js', {
+                scope: base
             });
             
             console.log('[PWA] Service worker registered:', this.swRegistration.scope);

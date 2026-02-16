@@ -1,65 +1,85 @@
 // Bump this when deploying asset changes to avoid stale caches.
-const CACHE_VERSION = 'v1.8.0';
-const CACHE_NAME = `db-guru-62-${CACHE_VERSION}`;
-const OFFLINE_URL = '/offline.html';
+const CACHE_VERSION = 'v3.0.2';
+const CACHE_NAME = `filemanager-62-${CACHE_VERSION}`;
+
+// Auto-detect base path from SW location.
+// Hosting (domain root): '/'   —   Localhost (subfolder): '/filemanager.smkn62.sch.id/'
+const BASE_PATH = new URL('./', self.location).pathname;
+
+const OFFLINE_URL = BASE_PATH + 'offline.html';
 
 const STATIC_CACHE_URLS = [
-    '/',
-    '/offline.html',
-    '/manifest.json',
-    '/assets/css/style.css',
-    '/assets/css/ajax.css',
-    '/assets/js/main.js',
-    '/assets/js/ajax.js',
-    '/assets/js/upload-manager.js',
-    '/assets/js/table-pagination.js',
-    '/assets/js/session-keepalive.js',
-    '/assets/js/pwa.js',
-    '/assets/images/smk62.png',
-    // PWA Icons - all sizes
-    '/assets/images/icons/favicon-16x16.png',
-    '/assets/images/icons/favicon-32x32.png',
-    '/assets/images/icons/apple-touch-icon.png',
-    '/assets/images/icons/icon-72x72.png',
-    '/assets/images/icons/icon-96x96.png',
-    '/assets/images/icons/icon-128x128.png',
-    '/assets/images/icons/icon-144x144.png',
-    '/assets/images/icons/icon-152x152.png',
-    '/assets/images/icons/icon-192x192.png',
-    '/assets/images/icons/icon-384x384.png',
-    '/assets/images/icons/icon-512x512.png',
-    '/assets/images/icons/icon-192x192-maskable.png',
-    '/assets/images/icons/icon-512x512-maskable.png',
+    'offline.html',
+    'manifest.json',
+    'assets/css/style.css',
+    'assets/css/ajax.css',
+    'assets/js/main.js',
+    'assets/js/ajax.js',
+    'assets/js/upload-manager.js',
+    'assets/js/table-pagination.js',
+    'assets/js/session-keepalive.js',
+    'assets/js/pwa.js',
+    'assets/images/smk62.png',
+    'assets/images/icons/favicon-16x16.png',
+    'assets/images/icons/favicon-32x32.png',
+    'assets/images/icons/apple-touch-icon.png',
+    'assets/images/icons/icon-72x72.png',
+    'assets/images/icons/icon-96x96.png',
+    'assets/images/icons/icon-128x128.png',
+    'assets/images/icons/icon-144x144.png',
+    'assets/images/icons/icon-152x152.png',
+    'assets/images/icons/icon-192x192.png',
+    'assets/images/icons/icon-384x384.png',
+    'assets/images/icons/icon-512x512.png',
+    'assets/images/icons/icon-192x192-maskable.png',
+    'assets/images/icons/icon-512x512-maskable.png'
+].map(p => BASE_PATH + p);
+
+// CDN assets cached separately (may fail due to CORS/network)
+const CDN_CACHE_URLS = [
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
 
 const DYNAMIC_CACHE_URLS = [
-    '/pages/files/',
-    '/pages/files/upload',
-    '/pages/links/',
-    '/pages/forms/',
-    '/pages/settings',
-    '/pages/category/kesiswaan',
-    '/pages/category/kurikulum',
-    '/pages/category/sapras-humas',
-    '/pages/category/tata-usaha'
-];
+    'pages/files/',
+    'pages/files/upload',
+    'pages/links/',
+    'pages/forms/',
+    'pages/settings',
+    'pages/category/kesiswaan',
+    'pages/category/kurikulum',
+    'pages/category/sapras-humas',
+    'pages/category/tata-usaha'
+].map(p => BASE_PATH + p);
 
 self.addEventListener('install', (event) => {
     console.log('[SW] Installing service worker...', CACHE_VERSION);
     
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => {
+            .then(async (cache) => {
                 console.log('[SW] Caching static assets');
-                return cache.addAll(STATIC_CACHE_URLS);
-            })
-            .then(() => {
-                console.log('[SW] Static assets cached successfully');
+                // Cache each URL individually so one failure doesn't block all
+                const results = await Promise.allSettled(
+                    STATIC_CACHE_URLS.map(url =>
+                        cache.add(url).catch(err => {
+                            console.warn('[SW] Failed to cache:', url, err.message);
+                        })
+                    )
+                );
+                // CDN assets: best-effort, don't block install
+                await Promise.allSettled(
+                    CDN_CACHE_URLS.map(url =>
+                        cache.add(url).catch(err => {
+                            console.warn('[SW] CDN cache skipped:', url, err.message);
+                        })
+                    )
+                );
+                console.log('[SW] Static assets cached');
                 return self.skipWaiting();
             })
             .catch((error) => {
-                console.error('[SW] Failed to cache static assets:', error);
+                console.error('[SW] Cache open failed:', error);
             })
     );
 });
@@ -103,41 +123,45 @@ self.addEventListener('fetch', (event) => {
     if (request.method !== 'GET') {
         return;
     }
+
+    // Strip BASE_PATH to get the app-relative path for routing decisions
+    const pathname = url.pathname;
+    const rel = pathname.startsWith(BASE_PATH)
+        ? pathname.slice(BASE_PATH.length)
+        : pathname;
     
-    if (url.origin === location.origin && url.pathname.includes('/auth/')) {
+    if (rel.startsWith('auth/')) {
         return;
     }
     
-    if (url.pathname.includes('/includes/api')) {
+    if (rel.startsWith('includes/api') || rel.startsWith('api/')) {
         event.respondWith(networkFirst(request));
         return;
     }
 
     // Critical assets should prefer network so UI/JS updates take effect.
-    // This avoids cases where old cached main.js/style.css causes missing functions or layout changes.
     const criticalAssets = new Set([
-        '/assets/js/main.js',
-        '/assets/js/ajax.js',
-        '/assets/js/pwa.js',
-        '/assets/js/upload-manager.js',
-        '/assets/js/table-pagination.js',
-        '/assets/css/style.css',
-        '/assets/css/ajax.css'
+        'assets/js/main.js',
+        'assets/js/ajax.js',
+        'assets/js/pwa.js',
+        'assets/js/upload-manager.js',
+        'assets/js/table-pagination.js',
+        'assets/css/style.css',
+        'assets/css/ajax.css'
     ]);
 
-    if (criticalAssets.has(url.pathname)) {
+    if (criticalAssets.has(rel)) {
         event.respondWith(networkFirst(request));
         return;
     }
     
     // Pages now use clean URLs (no .php) via .htaccess rewrite.
-    // Keep this check for any direct .php access (backward compat).
-    if (url.pathname.endsWith('.php') || url.pathname.startsWith('/pages/') || url.pathname.startsWith('/api/')) {
+    if (rel.endsWith('.php') || rel.startsWith('pages/')) {
         event.respondWith(networkFirst(request));
         return;
     }
     
-    if (url.pathname.match(/\.(css|js|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$/)) {
+    if (pathname.match(/\.(css|js|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$/)) {
         event.respondWith(cacheFirst(request));
         return;
     }
@@ -268,8 +292,8 @@ self.addEventListener('push', (event) => {
     
     const options = {
         body: event.data ? event.data.text() : 'Notifikasi baru dari FileManager SMKN62',
-        icon: '/assets/images/icons/icon-192x192.png',
-        badge: '/assets/images/icons/icon-72x72.png',
+        icon: BASE_PATH + 'assets/images/icons/icon-192x192.png',
+        badge: BASE_PATH + 'assets/images/icons/icon-72x72.png',
         vibrate: [200, 100, 200],
         tag: 'db-guru-notification',
         requireInteraction: false
@@ -286,6 +310,6 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     
     event.waitUntil(
-        clients.openWindow('/')
+        clients.openWindow(BASE_PATH)
     );
 });
