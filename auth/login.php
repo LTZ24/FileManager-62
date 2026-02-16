@@ -359,28 +359,7 @@ $csrfToken = generateSecureToken();
             font-size: 0.75rem;
         }
 
-        /* Back home link */
-        .back-home {
-            position: absolute;
-            top: 16px;
-            left: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            text-decoration: none;
-            color: #5f6368;
-            font-size: 0.8125rem;
-            font-weight: 500;
-            padding: 8px 16px;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            transition: background 0.2s, color 0.2s;
-        }
-
-        .back-home:hover {
-            background: #f8f9fa;
-            color: #202124;
-        }
+    
 
         @keyframes slideDown {
             from { opacity: 0; transform: translateY(-20px); }
@@ -435,13 +414,6 @@ $csrfToken = generateSecureToken();
         }
 
         @media (max-width: 600px) {
-            .back-home {
-                top: 12px;
-                left: 12px;
-                font-size: 0.75rem;
-                padding: 6px 12px;
-            }
-
             .login-logo img {
                 width: 80px;
                 height: 80px;
@@ -450,8 +422,6 @@ $csrfToken = generateSecureToken();
     </style>
 </head>
 <body class="login-page">
-    <a class="back-home" href="<?php echo BASE_URL; ?>/">&larr; Home</a>
-
     <div id="loginToast" class="login-toast" role="status" aria-live="polite">
         <i class="fas fa-clock"></i>
         <div>
@@ -581,23 +551,19 @@ $csrfToken = generateSecureToken();
             } catch (e) {}
         })();
 
-        // PWA Mobile: close app on back button at login page
+        // PWA Mobile: prevent app from closing on back button at login page
         (function () {
             var isStandalone = window.matchMedia('(display-mode: standalone)').matches
                             || window.navigator.standalone === true
                             || document.referrer.includes('android-app://');
-            var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-                        || window.innerWidth <= 768;
-            if (!isStandalone || !isMobile) return;
+            if (!isStandalone) return;
 
-            if (window.history.state === null || !window.history.state.pwaLoginGuard) {
-                window.history.pushState({ pwaLoginGuard: true }, document.title, window.location.href);
-            }
+            // Push a guard state so back button has something to pop
+            window.history.pushState({ pwaLoginGuard: true }, document.title, window.location.href);
+
             window.addEventListener('popstate', function () {
-                try { window.close(); } catch (err) {}
-                setTimeout(function () {
-                    if (!window.closed) window.location.href = 'about:blank';
-                }, 50);
+                // Re-push the guard state to keep the user on login page
+                window.history.pushState({ pwaLoginGuard: true }, document.title, window.location.href);
             });
         })();
     </script>
