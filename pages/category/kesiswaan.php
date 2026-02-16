@@ -13,9 +13,6 @@ $categoryColor = '#3b82f6';
 $folderId = '1_tLtTv8pryxUN-_tqvyGD3UxDVU011GW';
 $sheetId = SHEETS_KESISWAAN;
 
-// Cache configuration
-$cacheTime = 300;
-
 // Get Files from Drive
 function getCategoryFiles($folderId) {
     try {
@@ -94,36 +91,7 @@ function getCategoryForms($sheetId, $category) {
         return [];
     }
 }
-
-// Cache files
-$filesCacheKey = "category_{$categoryKey}_files";
-if (isset($_SESSION[$filesCacheKey]) && isset($_SESSION[$filesCacheKey . '_time']) && (time() - $_SESSION[$filesCacheKey . '_time']) < $cacheTime) {
-    $files = $_SESSION[$filesCacheKey];
-} else {
-    $files = getCategoryFiles($folderId);
-    $_SESSION[$filesCacheKey] = $files;
-    $_SESSION[$filesCacheKey . '_time'] = time();
-}
-
-// Cache links
-$linksCacheKey = "category_{$categoryKey}_links";
-if (isset($_SESSION[$linksCacheKey]) && isset($_SESSION[$linksCacheKey . '_time']) && (time() - $_SESSION[$linksCacheKey . '_time']) < $cacheTime) {
-    $links = $_SESSION[$linksCacheKey];
-} else {
-    $links = getCategoryLinks($sheetId, ucfirst($categoryKey));
-    $_SESSION[$linksCacheKey] = $links;
-    $_SESSION[$linksCacheKey . '_time'] = time();
-}
-
-// Cache forms
-$formsCacheKey = "category_{$categoryKey}_forms";
-if (isset($_SESSION[$formsCacheKey]) && isset($_SESSION[$formsCacheKey . '_time']) && (time() - $_SESSION[$formsCacheKey . '_time']) < $cacheTime) {
-    $forms = $_SESSION[$formsCacheKey];
-} else {
-    $forms = getCategoryForms($sheetId, ucfirst($categoryKey));
-    $_SESSION[$formsCacheKey] = $forms;
-    $_SESSION[$formsCacheKey . '_time'] = time();
-}
+// Data loaded via AJAX with skeleton loading
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -227,6 +195,20 @@ if (isset($_SESSION[$formsCacheKey]) && isset($_SESSION[$formsCacheKey . '_time'
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @media (max-width: 768px) { .filter-bar { grid-template-columns: 1fr; } .category-header { padding: 1.5rem; } .category-header i { font-size: 2rem; } .category-header h1 { font-size: 1.5rem; } }
+        
+        /* Skeleton Loading */
+        .skeleton-loader { overflow-x: auto; }
+        .skeleton-loader table { width: 100%; border-collapse: collapse; }
+        .skeleton-row td { padding: 0.625rem 0.75rem; border-bottom: 1px solid #f1f5f9; }
+        .skeleton-cell { display: flex; align-items: center; gap: 0.5rem; }
+        .skeleton-icon { width: 32px; height: 32px; border-radius: 0.375rem; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; flex-shrink: 0; }
+        .skeleton-text { flex: 1; display: flex; flex-direction: column; gap: 0.375rem; }
+        .skeleton-line { height: 12px; border-radius: 0.25rem; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        .skeleton-line.short { width: 40%; }
+        .skeleton-line.medium { width: 55%; }
+        .skeleton-actions { display: flex; gap: 0.25rem; justify-content: center; }
+        .skeleton-btn { width: 30px; height: 30px; border-radius: 0.375rem; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     </style>
 </head>
 <body>
@@ -262,28 +244,29 @@ if (isset($_SESSION[$formsCacheKey]) && isset($_SESSION[$formsCacheKey . '_time'
                     </select>
                     <button class="btn btn-secondary" onclick="resetFilesFilter()" style="padding: 0.5rem 0.75rem;"><i class="fas fa-redo"></i></button>
                 </div>
-                <?php if (empty($files)): ?>
-                    <div class="empty-state"><i class="fas fa-inbox"></i><h3>Belum Ada File</h3><p>Upload file pertama dengan klik tombol "Upload File"</p></div>
-                <?php else: ?>
+                <!-- Skeleton Loader -->
+                <div id="skeletonFiles" class="skeleton-loader">
+                    <table>
+                        <thead><tr><th style="width: 75%;">Nama File</th><th style="width: 25%; text-align: center;">Aksi</th></tr></thead>
+                        <tbody>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Data Table -->
+                <div id="filesTableWrapper" style="display: none;">
+                    <div id="filesEmptyState" class="empty-state" style="display: none;"><i class="fas fa-inbox"></i><h3>Belum Ada File</h3><p>Upload file pertama dengan klik tombol "Upload File"</p></div>
                     <div style="overflow-x: auto;">
                         <table id="filesTable">
                             <thead><tr><th style="width: 75%;">Nama File</th><th style="width: 25%; text-align: center;">Aksi</th></tr></thead>
-                            <tbody id="filesTableBody">
-                                <?php foreach ($files as $file): ?>
-                                <tr class="file-row" data-name="<?php echo strtolower($file->getName()); ?>" data-modified="<?php echo strtotime($file->getModifiedTime()); ?>">
-                                    <td><div class="file-info"><div class="file-icon"><i class="fas fa-file-alt"></i></div><div class="file-details"><span class="file-name"><?php echo htmlspecialchars($file->getName()); ?></span><span class="file-meta"><?php echo formatFileSize($file->getSize() ?? 0); ?> • <?php echo date('d/m/Y', strtotime($file->getModifiedTime())); ?></span></div></div></td>
-                                    <td style="text-align: center;">
-                                        <div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
-                                            <a href="<?php echo $file->getWebViewLink(); ?>" target="_blank" class="btn btn-sm btn-info" style="padding: 0.375rem 0.625rem;" title="Lihat"><i class="fas fa-eye"></i></a>
-                                            <button type="button" class="btn btn-sm btn-danger" style="padding: 0.375rem 0.625rem;" title="Hapus" onclick='deleteDriveFile(<?php echo json_encode($file->getId()); ?>, <?php echo json_encode($file->getName()); ?>)'><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
+                            <tbody id="filesTableBody"></tbody>
                         </table>
                     </div>
-                <?php endif; ?>
+                </div>
             </div>
             
             <!-- Links Section -->
@@ -297,28 +280,29 @@ if (isset($_SESSION[$formsCacheKey]) && isset($_SESSION[$formsCacheKey . '_time'
                     <div></div>
                     <button class="btn btn-secondary" onclick="resetLinksFilter()" style="padding: 0.5rem 0.75rem;"><i class="fas fa-redo"></i></button>
                 </div>
-                <?php if (empty($links)): ?>
-                    <div class="empty-state"><i class="fas fa-link"></i><h3>Belum Ada Link</h3><p>Tambahkan link pertama dengan klik tombol "Tambah Link"</p></div>
-                <?php else: ?>
+                <!-- Skeleton Loader -->
+                <div id="skeletonLinks" class="skeleton-loader">
+                    <table>
+                        <thead><tr><th style="width: 50%;">Judul</th><th style="width: 15%;">Tanggal</th><th style="width: 35%; text-align: center;">Aksi</th></tr></thead>
+                        <tbody>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Data Table -->
+                <div id="linksTableWrapper" style="display: none;">
+                    <div id="linksEmptyState" class="empty-state" style="display: none;"><i class="fas fa-link"></i><h3>Belum Ada Link</h3><p>Tambahkan link pertama dengan klik tombol "Tambah Link"</p></div>
                     <div style="overflow-x: auto;">
                         <table id="linksTable">
                             <thead><tr><th style="width: 50%;">Judul</th><th style="width: 15%;">Tanggal</th><th style="width: 35%; text-align: center;">Aksi</th></tr></thead>
-                            <tbody id="linksTableBody">
-                                <?php foreach ($links as $index => $link): ?>
-                                <tr class="link-row" data-title="<?php echo strtolower($link['title']); ?>">
-                                    <td><div class="file-info"><div class="file-icon"><i class="fas fa-link"></i></div><div class="file-details"><span class="file-name"><?php echo htmlspecialchars($link['title']); ?></span></div></div></td>
-                                    <td style="color: #64748b; font-size: 0.8125rem;"><?php echo date('d/m/Y', strtotime($link['date'])); ?></td>
-                                    <td style="text-align: center;"><div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
-                                        <button onclick="viewLinkDetail(<?php echo $index; ?>)" class="btn btn-sm btn-info" title="Detail"><i class="fas fa-info-circle"></i></button>
-                                        <button onclick="editLink(<?php echo $index; ?>)" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></button>
-                                        <button onclick="deleteLink(<?php echo $index; ?>)" class="btn btn-sm btn-danger" title="Hapus"><i class="fas fa-trash"></i></button>
-                                    </div></td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
+                            <tbody id="linksTableBody"></tbody>
                         </table>
                     </div>
-                <?php endif; ?>
+                </div>
             </div>
             
             <!-- Forms Section -->
@@ -332,28 +316,29 @@ if (isset($_SESSION[$formsCacheKey]) && isset($_SESSION[$formsCacheKey . '_time'
                     <div></div>
                     <button class="btn btn-secondary" onclick="resetFormsFilter()" style="padding: 0.5rem 0.75rem;"><i class="fas fa-redo"></i></button>
                 </div>
-                <?php if (empty($forms)): ?>
-                    <div class="empty-state"><i class="fas fa-file-alt"></i><h3>Belum Ada Form</h3><p>Tambahkan form pertama dengan klik tombol "Tambah Form"</p></div>
-                <?php else: ?>
+                <!-- Skeleton Loader -->
+                <div id="skeletonForms" class="skeleton-loader">
+                    <table>
+                        <thead><tr><th style="width: 50%;">Judul</th><th style="width: 15%;">Tanggal</th><th style="width: 35%; text-align: center;">Aksi</th></tr></thead>
+                        <tbody>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Data Table -->
+                <div id="formsTableWrapper" style="display: none;">
+                    <div id="formsEmptyState" class="empty-state" style="display: none;"><i class="fas fa-file-alt"></i><h3>Belum Ada Form</h3><p>Tambahkan form pertama dengan klik tombol "Tambah Form"</p></div>
                     <div style="overflow-x: auto;">
                         <table id="formsTable">
                             <thead><tr><th style="width: 50%;">Judul</th><th style="width: 15%;">Tanggal</th><th style="width: 35%; text-align: center;">Aksi</th></tr></thead>
-                            <tbody id="formsTableBody">
-                                <?php foreach ($forms as $index => $form): ?>
-                                <tr class="form-row" data-title="<?php echo strtolower($form['title']); ?>">
-                                    <td><div class="file-info"><div class="file-icon"><i class="fas fa-file-alt"></i></div><div class="file-details"><span class="file-name"><?php echo htmlspecialchars($form['title']); ?></span></div></div></td>
-                                    <td style="color: #64748b; font-size: 0.8125rem;"><?php echo date('d/m/Y', strtotime($form['date'])); ?></td>
-                                    <td style="text-align: center;"><div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
-                                        <button onclick="viewFormDetail(<?php echo $index; ?>)" class="btn btn-sm btn-info" title="Detail"><i class="fas fa-info-circle"></i></button>
-                                        <button onclick="editForm(<?php echo $index; ?>)" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></button>
-                                        <button onclick="deleteForm(<?php echo $index; ?>)" class="btn btn-sm btn-danger" title="Hapus"><i class="fas fa-trash"></i></button>
-                                    </div></td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
+                            <tbody id="formsTableBody"></tbody>
                         </table>
                     </div>
-                <?php endif; ?>
+                </div>
             </div>
             
             <?php include __DIR__ . '/../../includes/footer.php'; ?>
@@ -477,8 +462,8 @@ if (isset($_SESSION[$formsCacheKey]) && isset($_SESSION[$formsCacheKey . '_time'
     </div>
     
     <script>
-        let linksData = <?php echo json_encode($links); ?>;
-        let formsData = <?php echo json_encode($forms); ?>;
+        let linksData = [];
+        let formsData = [];
         const categoryKey = '<?php echo $categoryKey; ?>';
         const categorySlug = '<?php echo $categorySlug; ?>';
         const folderId = '<?php echo $folderId; ?>';
@@ -609,143 +594,221 @@ if (isset($_SESSION[$formsCacheKey]) && isset($_SESSION[$formsCacheKey . '_time'
         }
 
         async function reloadFilesTable() {
-            const url = new URL(filesDataUrl, window.location.origin);
-            url.searchParams.set('ajax', '1');
-            url.searchParams.set('category', categoryKey);
-            url.searchParams.set('_t', Date.now()); // Cache bust
-            const data = await fetchJson(url.toString());
-            const files = (data && data.data && data.data.files) ? data.data.files : [];
+            const skeleton = document.getElementById('skeletonFiles');
+            const wrapper = document.getElementById('filesTableWrapper');
+            const emptyState = document.getElementById('filesEmptyState');
+            const tableEl = document.getElementById('filesTable');
 
-            const tbody = document.getElementById('filesTableBody');
-            if (!tbody) return;
+            try {
+                const url = new URL(filesDataUrl, window.location.origin);
+                url.searchParams.set('ajax', '1');
+                url.searchParams.set('category', categoryKey);
+                url.searchParams.set('_t', Date.now());
+                const data = await fetchJson(url.toString());
+                const files = (data && data.data && data.data.files) ? data.data.files : [];
 
-            const rowsHtml = files.map(f => {
-                const name = escapeHtml(f.name);
-                const modified = f.modifiedTime ? new Date(f.modifiedTime) : null;
-                const dd = modified ? String(modified.getDate()).padStart(2, '0') : '--';
-                const mm = modified ? String(modified.getMonth() + 1).padStart(2, '0') : '--';
-                const yy = modified ? String(modified.getFullYear()) : '----';
-                const dateText = `${dd}/${mm}/${yy}`;
-                const sizeFormatted = escapeHtml(f.sizeFormatted || '0 Bytes');
+                const tbody = document.getElementById('filesTableBody');
+                if (!tbody) return;
 
-                return `
-                    <tr class="file-row" data-name="${escapeHtml(String(f.name || '').toLowerCase())}" data-modified="${Number(f.modifiedTimestamp || 0)}">
-                        <td>
-                            <div class="file-info">
-                                <div class="file-icon"><i class="fas fa-file-alt"></i></div>
-                                <div class="file-details"><span class="file-name">${name}</span><span class="file-meta">${sizeFormatted} • ${escapeHtml(dateText)}</span></div>
-                            </div>
-                        </td>
-                        <td style="text-align: center;">
-                            <div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
-                                <a href="${escapeHtml(f.webViewLink || '#')}" target="_blank" class="btn btn-sm btn-info" style="padding: 0.375rem 0.625rem;" title="Lihat"><i class="fas fa-eye"></i></a>
-                                <button type="button" class="btn btn-sm btn-danger" style="padding: 0.375rem 0.625rem;" title="Hapus" onclick='deleteDriveFile(${JSON.stringify(f.id)}, ${JSON.stringify(f.name)})'><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+                const rowsHtml = files.map(f => {
+                    const name = escapeHtml(f.name);
+                    const modified = f.modifiedTime ? new Date(f.modifiedTime) : null;
+                    const dd = modified ? String(modified.getDate()).padStart(2, '0') : '--';
+                    const mm = modified ? String(modified.getMonth() + 1).padStart(2, '0') : '--';
+                    const yy = modified ? String(modified.getFullYear()) : '----';
+                    const dateText = `${dd}/${mm}/${yy}`;
+                    const sizeFormatted = escapeHtml(f.sizeFormatted || '0 Bytes');
 
-            tbody.innerHTML = rowsHtml;
+                    return `
+                        <tr class="file-row" data-name="${escapeHtml(String(f.name || '').toLowerCase())}" data-modified="${Number(f.modifiedTimestamp || 0)}">
+                            <td>
+                                <div class="file-info">
+                                    <div class="file-icon"><i class="fas fa-file-alt"></i></div>
+                                    <div class="file-details"><span class="file-name">${name}</span><span class="file-meta">${sizeFormatted} • ${escapeHtml(dateText)}</span></div>
+                                </div>
+                            </td>
+                            <td style="text-align: center;">
+                                <div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
+                                    <a href="${escapeHtml(f.webViewLink || '#')}" target="_blank" class="btn btn-sm btn-info" style="padding: 0.375rem 0.625rem;" title="Lihat"><i class="fas fa-eye"></i></a>
+                                    <button type="button" class="btn btn-sm btn-danger" style="padding: 0.375rem 0.625rem;" title="Hapus" onclick='deleteDriveFile(${JSON.stringify(f.id)}, ${JSON.stringify(f.name)})'><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
 
-            if (window.filesPagination && typeof window.filesPagination.refresh === 'function') {
-                window.filesPagination.refresh();
-            } else if (window.tablePaginationInstances && window.tablePaginationInstances['filesTable']) {
-                window.tablePaginationInstances['filesTable'].refresh();
+                tbody.innerHTML = rowsHtml;
+
+                // Handle empty state
+                if (files.length === 0) {
+                    if (tableEl) tableEl.style.display = 'none';
+                    if (emptyState) emptyState.style.display = '';
+                } else {
+                    if (tableEl) tableEl.style.display = '';
+                    if (emptyState) emptyState.style.display = 'none';
+                }
+
+                if (window.filesPagination && typeof window.filesPagination.refresh === 'function') {
+                    window.filesPagination.refresh();
+                } else if (window.tablePaginationInstances && window.tablePaginationInstances['filesTable']) {
+                    window.tablePaginationInstances['filesTable'].refresh();
+                }
+            } catch (e) {
+                console.error('Failed to load files:', e);
+                if (emptyState) {
+                    emptyState.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h3>Gagal Memuat Data</h3><p>Terjadi kesalahan saat memuat file. <a href="javascript:void(0)" onclick="reloadFilesTable()">Coba lagi</a></p>';
+                    emptyState.style.display = '';
+                }
+                if (tableEl) tableEl.style.display = 'none';
+            } finally {
+                if (skeleton) skeleton.style.display = 'none';
+                if (wrapper) wrapper.style.display = '';
             }
         }
 
         async function reloadLinksTable() {
-            const url = new URL(linksDataUrl, window.location.origin);
-            url.searchParams.set('ajax', '1');
-            url.searchParams.set('category', categoryKey);
-            url.searchParams.set('_t', Date.now()); // Cache bust
-            const data = await fetchJson(url.toString());
-            linksData = (data && data.data && data.data.links) ? data.data.links : [];
+            const skeleton = document.getElementById('skeletonLinks');
+            const wrapper = document.getElementById('linksTableWrapper');
+            const emptyState = document.getElementById('linksEmptyState');
+            const tableEl = document.getElementById('linksTable');
 
-            const tbody = document.getElementById('linksTableBody');
-            if (!tbody) return;
+            try {
+                const url = new URL(linksDataUrl, window.location.origin);
+                url.searchParams.set('ajax', '1');
+                url.searchParams.set('category', categoryKey);
+                url.searchParams.set('_t', Date.now());
+                const data = await fetchJson(url.toString());
+                linksData = (data && data.data && data.data.links) ? data.data.links : [];
 
-            const rowsHtml = linksData.map((l, idx) => {
-                const title = escapeHtml(l.title);
-                const date = l.date ? new Date(l.date) : null;
-                const dd = date ? String(date.getDate()).padStart(2, '0') : '--';
-                const mm = date ? String(date.getMonth() + 1).padStart(2, '0') : '--';
-                const yy = date ? String(date.getFullYear()) : '----';
-                const dateText = `${dd}/${mm}/${yy}`;
-                return `
-                    <tr class="link-row" data-title="${escapeHtml(String(l.title || '').toLowerCase())}">
-                        <td>
-                            <div class="file-info">
-                                <div class="file-icon"><i class="fas fa-link"></i></div>
-                                <div class="file-details"><span class="file-name">${title}</span></div>
-                            </div>
-                        </td>
-                        <td style="color: #64748b; font-size: 0.8125rem;">${escapeHtml(dateText)}</td>
-                        <td style="text-align: center;">
-                            <div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
-                                <button onclick="viewLinkDetail(${idx})" class="btn btn-sm btn-info" title="Detail"><i class="fas fa-info-circle"></i></button>
-                                <button onclick="editLink(${idx})" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></button>
-                                <button onclick="deleteLink(${idx})" class="btn btn-sm btn-danger" title="Hapus"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+                const tbody = document.getElementById('linksTableBody');
+                if (!tbody) return;
 
-            tbody.innerHTML = rowsHtml;
+                const rowsHtml = linksData.map((l, idx) => {
+                    const title = escapeHtml(l.title);
+                    const date = l.date ? new Date(l.date) : null;
+                    const dd = date ? String(date.getDate()).padStart(2, '0') : '--';
+                    const mm = date ? String(date.getMonth() + 1).padStart(2, '0') : '--';
+                    const yy = date ? String(date.getFullYear()) : '----';
+                    const dateText = `${dd}/${mm}/${yy}`;
+                    return `
+                        <tr class="link-row" data-title="${escapeHtml(String(l.title || '').toLowerCase())}">
+                            <td>
+                                <div class="file-info">
+                                    <div class="file-icon"><i class="fas fa-link"></i></div>
+                                    <div class="file-details"><span class="file-name">${title}</span></div>
+                                </div>
+                            </td>
+                            <td style="color: #64748b; font-size: 0.8125rem;">${escapeHtml(dateText)}</td>
+                            <td style="text-align: center;">
+                                <div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
+                                    <button onclick="viewLinkDetail(${idx})" class="btn btn-sm btn-info" title="Detail"><i class="fas fa-info-circle"></i></button>
+                                    <button onclick="editLink(${idx})" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></button>
+                                    <button onclick="deleteLink(${idx})" class="btn btn-sm btn-danger" title="Hapus"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
 
-            if (window.linksPagination && typeof window.linksPagination.refresh === 'function') {
-                window.linksPagination.refresh();
-            } else if (window.tablePaginationInstances && window.tablePaginationInstances['linksTable']) {
-                window.tablePaginationInstances['linksTable'].refresh();
+                tbody.innerHTML = rowsHtml;
+
+                // Handle empty state
+                if (linksData.length === 0) {
+                    if (tableEl) tableEl.style.display = 'none';
+                    if (emptyState) emptyState.style.display = '';
+                } else {
+                    if (tableEl) tableEl.style.display = '';
+                    if (emptyState) emptyState.style.display = 'none';
+                }
+
+                if (window.linksPagination && typeof window.linksPagination.refresh === 'function') {
+                    window.linksPagination.refresh();
+                } else if (window.tablePaginationInstances && window.tablePaginationInstances['linksTable']) {
+                    window.tablePaginationInstances['linksTable'].refresh();
+                }
+            } catch (e) {
+                console.error('Failed to load links:', e);
+                if (emptyState) {
+                    emptyState.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h3>Gagal Memuat Data</h3><p>Terjadi kesalahan saat memuat link. <a href="javascript:void(0)" onclick="reloadLinksTable()">Coba lagi</a></p>';
+                    emptyState.style.display = '';
+                }
+                if (tableEl) tableEl.style.display = 'none';
+            } finally {
+                if (skeleton) skeleton.style.display = 'none';
+                if (wrapper) wrapper.style.display = '';
             }
         }
 
         async function reloadFormsTable() {
-            const url = new URL(formsDataUrl, window.location.origin);
-            url.searchParams.set('ajax', '1');
-            url.searchParams.set('category', categoryKey);
-            url.searchParams.set('_t', Date.now()); // Cache bust
-            const data = await fetchJson(url.toString());
-            formsData = (data && data.data && data.data.forms) ? data.data.forms : [];
+            const skeleton = document.getElementById('skeletonForms');
+            const wrapper = document.getElementById('formsTableWrapper');
+            const emptyState = document.getElementById('formsEmptyState');
+            const tableEl = document.getElementById('formsTable');
 
-            const tbody = document.getElementById('formsTableBody');
-            if (!tbody) return;
+            try {
+                const url = new URL(formsDataUrl, window.location.origin);
+                url.searchParams.set('ajax', '1');
+                url.searchParams.set('category', categoryKey);
+                url.searchParams.set('_t', Date.now());
+                const data = await fetchJson(url.toString());
+                formsData = (data && data.data && data.data.forms) ? data.data.forms : [];
 
-            const rowsHtml = formsData.map((f, idx) => {
-                const title = escapeHtml(f.title);
-                const date = f.date ? new Date(f.date) : null;
-                const dd = date ? String(date.getDate()).padStart(2, '0') : '--';
-                const mm = date ? String(date.getMonth() + 1).padStart(2, '0') : '--';
-                const yy = date ? String(date.getFullYear()) : '----';
-                const dateText = `${dd}/${mm}/${yy}`;
-                return `
-                    <tr class="form-row" data-title="${escapeHtml(String(f.title || '').toLowerCase())}">
-                        <td>
-                            <div class="file-info">
-                                <div class="file-icon"><i class="fas fa-file-alt"></i></div>
-                                <div class="file-details"><span class="file-name">${title}</span></div>
-                            </div>
-                        </td>
-                        <td style="color: #64748b; font-size: 0.8125rem;">${escapeHtml(dateText)}</td>
-                        <td style="text-align: center;">
-                            <div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
-                                <button onclick="viewFormDetail(${idx})" class="btn btn-sm btn-info" title="Detail"><i class="fas fa-info-circle"></i></button>
-                                <button onclick="editForm(${idx})" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></button>
-                                <button onclick="deleteForm(${idx})" class="btn btn-sm btn-danger" title="Hapus"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+                const tbody = document.getElementById('formsTableBody');
+                if (!tbody) return;
 
-            tbody.innerHTML = rowsHtml;
+                const rowsHtml = formsData.map((f, idx) => {
+                    const title = escapeHtml(f.title);
+                    const date = f.date ? new Date(f.date) : null;
+                    const dd = date ? String(date.getDate()).padStart(2, '0') : '--';
+                    const mm = date ? String(date.getMonth() + 1).padStart(2, '0') : '--';
+                    const yy = date ? String(date.getFullYear()) : '----';
+                    const dateText = `${dd}/${mm}/${yy}`;
+                    return `
+                        <tr class="form-row" data-title="${escapeHtml(String(f.title || '').toLowerCase())}">
+                            <td>
+                                <div class="file-info">
+                                    <div class="file-icon"><i class="fas fa-file-alt"></i></div>
+                                    <div class="file-details"><span class="file-name">${title}</span></div>
+                                </div>
+                            </td>
+                            <td style="color: #64748b; font-size: 0.8125rem;">${escapeHtml(dateText)}</td>
+                            <td style="text-align: center;">
+                                <div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
+                                    <button onclick="viewFormDetail(${idx})" class="btn btn-sm btn-info" title="Detail"><i class="fas fa-info-circle"></i></button>
+                                    <button onclick="editForm(${idx})" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></button>
+                                    <button onclick="deleteForm(${idx})" class="btn btn-sm btn-danger" title="Hapus"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
 
-            if (window.formsPagination && typeof window.formsPagination.refresh === 'function') {
-                window.formsPagination.refresh();
-            } else if (window.tablePaginationInstances && window.tablePaginationInstances['formsTable']) {
-                window.tablePaginationInstances['formsTable'].refresh();
+                tbody.innerHTML = rowsHtml;
+
+                // Handle empty state
+                if (formsData.length === 0) {
+                    if (tableEl) tableEl.style.display = 'none';
+                    if (emptyState) emptyState.style.display = '';
+                } else {
+                    if (tableEl) tableEl.style.display = '';
+                    if (emptyState) emptyState.style.display = 'none';
+                }
+
+                if (window.formsPagination && typeof window.formsPagination.refresh === 'function') {
+                    window.formsPagination.refresh();
+                } else if (window.tablePaginationInstances && window.tablePaginationInstances['formsTable']) {
+                    window.tablePaginationInstances['formsTable'].refresh();
+                }
+            } catch (e) {
+                console.error('Failed to load forms:', e);
+                if (emptyState) {
+                    emptyState.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h3>Gagal Memuat Data</h3><p>Terjadi kesalahan saat memuat form. <a href="javascript:void(0)" onclick="reloadFormsTable()">Coba lagi</a></p>';
+                    emptyState.style.display = '';
+                }
+                if (tableEl) tableEl.style.display = 'none';
+            } finally {
+                if (skeleton) skeleton.style.display = 'none';
+                if (wrapper) wrapper.style.display = '';
             }
         }
         
@@ -1112,13 +1175,18 @@ if (isset($_SESSION[$formsCacheKey]) && isset($_SESSION[$formsCacheKey . '_time'
         // Close modal on outside click
         window.onclick = function(e) { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; }
         
-        // Init pagination
+        // Init pagination and lazy load data
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof initTablePagination === 'function') {
                 window.filesPagination = initTablePagination('filesTable', { rowsPerPage: 10, rowsPerPageOptions: [10, 25, 50, 100] });
                 window.linksPagination = initTablePagination('linksTable', { rowsPerPage: 10, rowsPerPageOptions: [10, 25, 50, 100] });
                 window.formsPagination = initTablePagination('formsTable', { rowsPerPage: 10, rowsPerPageOptions: [10, 25, 50, 100] });
             }
+            
+            // Lazy load all tables via AJAX (skeleton shown until data arrives)
+            reloadFilesTable();
+            reloadLinksTable();
+            reloadFormsTable();
         });
     </script>
 </body>
