@@ -8,7 +8,7 @@
         <i class="fas fa-sync-alt"></i>
         <span>Refresh</span>
     </button>
-    <a href="<?php echo BASE_URL; ?>/index.php" class="nav-btn nav-home" title="Dashboard">
+    <a href="<?php echo BASE_URL; ?>/" class="nav-btn nav-home" title="Dashboard">
         <i class="fas fa-home"></i>
         <span>Dashboard</span>
     </a>

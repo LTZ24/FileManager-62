@@ -13,8 +13,8 @@ $categories = getDriveCategories();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Folder Google Drive - <?php echo APP_NAME; ?></title>
     <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>/assets/images/smk62.png">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css?v=<?php echo urlencode(APP_VERSION); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
         .folders-grid {
             display: grid;
@@ -118,6 +118,6 @@ $categories = getDriveCategories();
         </div>
     </div>
     
-    <script src="<?php echo BASE_URL; ?>/assets/js/main.js"></script>
+    <script src="<?php echo BASE_URL; ?>/assets/js/main.js?v=<?php echo urlencode(APP_VERSION); ?>"></script>
 </body>
 </html>

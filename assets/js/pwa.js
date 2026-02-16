@@ -36,8 +36,8 @@ class PWAManager {
         }
         
         try {
-            this.swRegistration = await navigator.serviceWorker.register('/Data-Base-Guru-v2/sw.js', {
-                scope: '/Data-Base-Guru-v2/'
+            this.swRegistration = await navigator.serviceWorker.register('/sw.js', {
+                scope: '/'
             });
             
             console.log('[PWA] Service worker registered:', this.swRegistration.scope);

@@ -11,8 +11,8 @@ requireLogin();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profil Saya - <?php echo APP_NAME; ?></title>
     <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>/assets/images/smk62.png">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css?v=<?php echo urlencode(APP_VERSION); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
         .profile-container {
             max-width: 800px;
@@ -154,21 +154,15 @@ requireLogin();
             <div class="profile-container">
                 
                 <div class="profile-header">
-                    <?php if (isset($_SESSION['user_picture']) && !empty($_SESSION['user_picture'])): ?>
-                        <img src="<?php echo htmlspecialchars($_SESSION['user_picture']); ?>" 
-                             alt="Profile Picture" 
-                             class="profile-picture">
-                    <?php else: ?>
-                        <div class="profile-picture-placeholder">
-                            <i class="fas fa-user"></i>
-                        </div>
-                    <?php endif; ?>
+                    <div class="profile-picture-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
                     
                     <div class="profile-name">
-                        <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?>
+                        <?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?>
                     </div>
                     <div class="profile-email">
-                        <?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?>
+                        <?php echo htmlspecialchars($_SESSION['user_role'] ?? 'user'); ?>
                     </div>
                 </div>
                 
@@ -179,19 +173,19 @@ requireLogin();
                     
                     <div class="info-row">
                         <div class="info-label">
-                            <i class="fas fa-user"></i> Nama Lengkap
+                            <i class="fas fa-at"></i> Username
                         </div>
                         <div class="info-value">
-                            <?php echo htmlspecialchars($_SESSION['user_name'] ?? '-'); ?>
+                            <?php echo htmlspecialchars($_SESSION['username'] ?? '-'); ?>
                         </div>
                     </div>
                     
                     <div class="info-row">
                         <div class="info-label">
-                            <i class="fas fa-envelope"></i> Email
+                            <i class="fas fa-shield-alt"></i> Role
                         </div>
                         <div class="info-value">
-                            <?php echo htmlspecialchars($_SESSION['user_email'] ?? '-'); ?>
+                            <?php echo htmlspecialchars(ucfirst($_SESSION['user_role'] ?? 'user')); ?>
                         </div>
                     </div>
                     
@@ -216,6 +210,6 @@ requireLogin();
         </div>
     </div>
     
-    <script src="<?php echo BASE_URL; ?>/assets/js/main.js"></script>
+    <script src="<?php echo BASE_URL; ?>/assets/js/main.js?v=<?php echo urlencode(APP_VERSION); ?>"></script>
 </body>
 </html>

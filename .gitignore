@@ -42,11 +42,27 @@ Desktop.ini
 .env.local
 .env.*.local
 
+# Google Service Account keys (DO NOT COMMIT)
+*service-account*.json
+*service_account*.json
+google-service-account*.json
+credentials*.json
+smkn-62-database-*.json
+/data/*.json
+/data/credentials/*.json
+
 # Backup Files
 *.bak
 *.backup
 *.old
 *.tmp
+
+# Backup Archive Folder
+/backup/
+
+# Non-standard backup naming
+*_backup.*
+*-backup.*
 
 # Documentation (keep only essential docs)
 AJAX_IMPLEMENTATION.md

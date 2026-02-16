@@ -1,6 +1,6 @@
-# Data Management System v2
+# File Manager v2
 
-Sistem Manajemen Data dengan integrasi Google Sheets & Google Drive API.
+File Manager internal dengan integrasi Google Drive API (dan fitur manajemen data pendukung).
 
 ## 📋 Fitur Utama
 
@@ -36,8 +36,9 @@ Sistem Manajemen Data dengan integrasi Google Sheets & Google Drive API.
 ### 1. Clone atau Download Project
 
 ```bash
-git clone https://github.com/LTZ24/DATA-MANAGEMENT_v2.git
-cd DATA-MANAGEMENT_v2
+# Sesuaikan URL repository dengan environment Anda
+git clone <repository-url>
+cd <folder-project>
 ```
 
 ### 2. Install Dependencies

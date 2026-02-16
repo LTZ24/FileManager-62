@@ -1,17 +1,58 @@
 <?php
-require_once __DIR__ . '/../vendor/autoload.php';
+/**
+ * Login Page — Username / Password Authentication
+ * FileManager SMKN 62 Jakarta v3.0
+ *
+ * UI restored to classic Google-style clean layout.
+ */
 require_once __DIR__ . '/../includes/config.php';
 
-// If already logged in, redirect to dashboard
+// Already logged in → dashboard
 if (isLoggedIn()) {
-    redirect(BASE_URL . '/index.php');
+    redirect(BASE_URL . '/');
 }
 
-$client = getGoogleClient();
-$authUrl = $client->createAuthUrl();
+$error = '';
+$username = '';
 
-$sessionTimeout = isset($_GET['session_timeout']) ? true : false;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    if ($username === '' || $password === '') {
+        $error = 'Username dan password wajib diisi.';
+    } else {
+        if (!checkRateLimit('login_attempt', 8, 60)) {
+            $error = 'Terlalu banyak percobaan login. Coba lagi dalam 1 menit.';
+        } else {
+            $db = getDB();
+            $stmt = $db->prepare('SELECT id, username, password_hash, email, role FROM users WHERE username = ? AND is_active = 1 LIMIT 1');
+            $stmt->execute([$username]);
+            $user = $stmt->fetch();
+
+            if ($user && password_verify($password, $user['password_hash'])) {
+                session_regenerate_id(true);
+
+                $_SESSION['user_id']       = $user['id'];
+                $_SESSION['username']      = $user['username'];
+                $_SESSION['user_name']     = $user['username'];
+                $_SESSION['user_email']    = $user['email'] ?? '';
+                $_SESSION['user_role']     = $user['role'];
+                $_SESSION['last_activity'] = time();
+                $_SESSION['created']       = time();
+
+                logSecurityEvent('LOGIN_SUCCESS', ['user' => $user['username']]);
+                redirect(BASE_URL . '/');
+            } else {
+                logSecurityEvent('LOGIN_FAILED', ['user' => $username]);
+                $error = 'Username atau password salah.';
+            }
+        }
+    }
+}
+
 $logoutReason = isset($_GET['reason']) ? $_GET['reason'] : '';
+$csrfToken = generateSecureToken();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -19,333 +60,542 @@ $logoutReason = isset($_GET['reason']) ? $_GET['reason'] : '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - <?php echo APP_NAME; ?></title>
-    
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#50e3c2">
-    <meta name="description" content="Sistem Manajemen Database Guru SMK Negeri 62 Jakarta">
+    <meta name="description" content="File Manager internal SMK Negeri 62 Jakarta">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="DB Guru 62">
-    
+    <meta name="apple-mobile-web-app-title" content="FileManager SMKN62">
+
     <!-- Icons -->
-    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo BASE_URL; ?>/assets/images/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="<?php echo BASE_URL; ?>/assets/images/icons/favicon-16x16.png">
-    <link rel="apple-touch-icon" href="<?php echo BASE_URL; ?>/assets/images/icons/apple-touch-icon.png">
-    
+    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo BASE_URL; ?>/assets/images/icons/icon-128x128.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?php echo BASE_URL; ?>/assets/images/icons/icon-72x72.png">
+    <link rel="apple-touch-icon" href="<?php echo BASE_URL; ?>/assets/images/icons/icon-152x152.png">
+
     <!-- PWA Manifest -->
-    <link rel="manifest" href="<?php echo BASE_URL; ?>/manifest.json">
-    
+    <link rel="manifest" href="<?php echo BASE_URL; ?>/manifest.json?v=<?php echo urlencode(APP_VERSION); ?>">
+
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css?v=<?php echo urlencode(APP_VERSION); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body.login-page {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: #ffffff;
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
         }
-        
+
         .login-container {
-            width: 100%;
-            max-width: 1000px;
-        }
-        
-        .login-box {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            min-height: 500px;
-        }
-        
-        .login-left {
-            background: linear-gradient(135deg, #50e3c2 0%, #4dd0e1 100%);
-            padding: 3rem;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            text-align: center;
-            color: white;
+            justify-content: center;
+            padding: 40px 20px;
+            max-width: 100%;
         }
-        
-        .login-left img {
-            width: 120px;
-            height: 120px;
+
+        .login-content {
+            text-align: center;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .login-logo {
+            margin-bottom: 2rem;
+        }
+
+        .login-logo img {
+            width: 150px;
+            height: 150px;
             object-fit: contain;
-            margin-bottom: 1.5rem;
-            background: white;
-            border-radius: 50%;
-            padding: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
-        
-        .login-left h1 {
-            font-size: 1.75rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
+
+        .login-title {
+            margin-bottom: 2rem;
         }
-        
-        .login-left p {
+
+        .login-title h1 {
+            font-size: 1.5rem;
+            color: #202124;
+            margin: 0 0 0.5rem 0;
+            font-weight: 400;
+        }
+
+        .login-title p {
             font-size: 1rem;
-            opacity: 0.95;
-            margin-bottom: 2rem;
+            color: #5f6368;
+            margin: 0;
+            font-weight: 400;
         }
-        
-        .login-left .features {
-            text-align: center;
-            width: 100%;
+
+        /* Toast notification */
+        .login-toast {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 99999;
+            background: rgba(15, 23, 42, 0.95);
+            color: #ffffff;
+            padding: 0.85rem 1rem;
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            display: none;
+            max-width: min(420px, calc(100vw - 36px));
+            font-size: 0.9rem;
+            line-height: 1.35;
+        }
+
+        .login-toast.show {
             display: flex;
-            justify-content: center;
+            gap: 0.6rem;
+            align-items: flex-start;
+            animation: slideDown 0.25s ease;
         }
-        
-        .login-left .features ul {
-            list-style: none;
-            display: inline-block;
-            text-align: left;
+
+        .login-toast i {
+            margin-top: 2px;
+            color: #fbbf24;
         }
-        
-        .login-left .features li {
-            padding: 0.5rem 0;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 0.95rem;
-        }
-        
-        .login-left .features li i {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        .login-right {
-            padding: 3rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .login-header h2 {
-            font-size: 1.75rem;
-            color: #2d3748;
-            margin-bottom: 0.5rem;
-        }
-        
-        .login-header p {
-            color: #718096;
-            font-size: 0.95rem;
-        }
-        
-        .alert-timeout {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            color: #856404;
+
+        /* Alert styles */
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c2c7;
+            color: #842029;
             padding: 1rem;
             border-radius: 8px;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             display: flex;
             align-items: start;
             gap: 0.75rem;
             font-size: 0.875rem;
             animation: slideDown 0.3s ease;
+            text-align: left;
         }
-        
-        .alert-timeout i {
+
+        .alert-error i {
             font-size: 1.25rem;
             margin-top: 2px;
         }
-        
-        .google-btn {
-            background: white;
-            color: #444;
-            border: 2px solid #ddd;
-            padding: 14px 24px;
-            font-size: 1rem;
-            font-weight: 600;
+
+        .alert-success {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+            padding: 1rem;
             border-radius: 8px;
+            margin-bottom: 1.25rem;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .google-btn:hover {
-            background: #f8f9fa;
-            border-color: #50e3c2;
-            box-shadow: 0 4px 12px rgba(80, 227, 194, 0.2);
-            transform: translateY(-2px);
-        }
-        
-        .google-icon {
-            width: 20px;
-            height: 20px;
-        }
-        
-        .login-footer {
-            text-align: center;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e2e8f0;
-        }
-        
-        .login-footer p {
-            color: #718096;
+            gap: 0.75rem;
             font-size: 0.875rem;
-            margin: 0;
+            animation: slideDown 0.3s ease;
         }
-        
-        .login-footer a {
+
+        /* Login form */
+        .login-form {
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 1.125rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: #5f6368;
+            margin-bottom: 0.4rem;
+            letter-spacing: 0.25px;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap input {
+            width: 100%;
+            padding: 0.75rem 0.9rem 0.75rem 2.5rem;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 0.9375rem;
+            color: #202124;
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .input-wrap input:focus {
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+        }
+
+        .input-wrap .input-icon {
+            position: absolute;
+            left: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9aa0a6;
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+        .input-wrap .toggle-password {
+            position: absolute;
+            right: 0.6rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9aa0a6;
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 4px;
+        }
+
+        .input-wrap .toggle-password:hover {
+            color: #5f6368;
+        }
+
+        /* Submit button — Google-style */
+        .btn-login {
+            width: 100%;
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            letter-spacing: 0.25px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+            margin-top: 0.5rem;
+        }
+
+        .btn-login:hover {
+            background: #1765cc;
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+        }
+
+        .btn-login:active {
+            background: #185abc;
+        }
+
+        .btn-login:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Data notice */
+        .data-notice {
+            margin-top: 2rem;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dadce0;
+            font-size: 0.75rem;
+            color: #5f6368;
+            line-height: 1.6;
+            text-align: justify;
+        }
+
+        .data-notice strong {
+            display: block;
+            text-align: center;
+            color: #202124;
+            margin-bottom: 8px;
+        }
+
+        /* Footer */
+        .page-footer {
+            background: #f8f9fa;
+            border-top: 1px solid #dadce0;
+            padding: 12px 20px;
+            width: 100%;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .page-footer span {
+            color: #5f6368;
+            font-size: 0.75rem;
+        }
+
+        .page-footer a {
+            color: #5f6368;
+            text-decoration: none;
+            font-size: 0.75rem;
             transition: color 0.2s;
         }
-        
-        .login-footer a:hover {
-            color: #4dd0e1;
-            text-decoration: underline;
+
+        .page-footer a:hover {
+            color: #202124;
         }
-        
+
+        .page-footer .sep {
+            color: #dadce0;
+            margin: 0 8px;
+            font-size: 0.75rem;
+        }
+
+        /* Back home link */
+        .back-home {
+            position: absolute;
+            top: 16px;
+            left: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: #5f6368;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            padding: 8px 16px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .back-home:hover {
+            background: #f8f9fa;
+            color: #202124;
+        }
+
         @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-        
-        /* Mobile Responsive */
+
+        /* ── Mobile Responsive ── */
         @media (max-width: 768px) {
-            .login-box {
-                grid-template-columns: 1fr;
-                min-height: auto;
+            .login-container {
+                padding: 20px;
             }
-            
-            .login-left {
-                padding: 2rem 1.5rem;
+
+            .login-logo img {
+                width: 100px;
+                height: 100px;
             }
-            
-            .login-left img {
-                width: 80px;
-                height: 80px;
-                padding: 10px;
-            }
-            
-            .login-left h1 {
+
+            .login-title h1 {
                 font-size: 1.25rem;
             }
-            
-            .login-left p {
-                font-size: 0.875rem;
-                margin-bottom: 1rem;
-            }
-            
-            .login-left .features {
-                display: none;
-            }
-            
-            .login-right {
-                padding: 2rem 1.5rem;
-            }
-            
-            .login-header h2 {
-                font-size: 1.375rem;
-            }
-            
-            .login-header p {
+
+            .login-title p {
                 font-size: 0.875rem;
             }
-            
-            .google-btn {
-                padding: 12px 20px;
-                font-size: 0.95rem;
+
+            .input-wrap input {
+                padding: 0.65rem 0.8rem 0.65rem 2.25rem;
+                font-size: 0.875rem;
+            }
+
+            .btn-login {
+                padding: 10px 20px;
+                font-size: 0.875rem;
+            }
+
+            .data-notice {
+                font-size: 0.6875rem;
+            }
+
+            .page-footer {
+                padding: 10px 12px;
+            }
+
+            .page-footer span, .page-footer a {
+                font-size: 0.6875rem;
+            }
+
+            .page-footer .sep {
+                margin: 0 4px;
+                font-size: 0.6875rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .back-home {
+                top: 12px;
+                left: 12px;
+                font-size: 0.75rem;
+                padding: 6px 12px;
+            }
+
+            .login-logo img {
+                width: 80px;
+                height: 80px;
             }
         }
     </style>
 </head>
 <body class="login-page">
-    <div class="login-container">
-        <div class="login-box">
-            <!-- Left Panel -->
-            <div class="login-left">
-                <img src="<?php echo BASE_URL; ?>/assets/images/smk62.png" alt="Logo SMKN 62">
-                <h1>Database Guru</h1>
-                <p>SMKN 62 Jakarta</p>
-                
-                <div class="features">
-                    <ul>
-                        <li>
-                            <i class="fas fa-cloud"></i>
-                            <span>Data tersimpan di Google Cloud</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-users"></i>
-                            <span>Manajemen data guru terintegrasi</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- Right Panel -->
-            <div class="login-right">
-                <div class="login-header">
-                    <h2>Selamat Datang</h2>
-                    <p>Login untuk mengakses sistem</p>
-                </div>
-                
-                <?php if ($sessionTimeout || $logoutReason === 'timeout'): ?>
-                    <div class="alert-timeout">
-                        <i class="fas fa-clock"></i>
-                        <div>
-                            <strong>Sesi Berakhir</strong><br>
-                            <small>Sesi telah berakhir karena tidak ada aktivitas selama 30 menit.</small>
-                        </div>
-                    </div>
-                <?php endif; ?>
-                
-                <a href="<?php echo htmlspecialchars($authUrl); ?>" class="google-btn">
-                    <svg class="google-icon" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    Masuk dengan Google
-                </a>
-                
-                <div class="login-footer">
-                    <p style="margin: 0; line-height: 1.8;">
-                        <a href="<?php echo BASE_URL; ?>/privacy.php" style="color: #50e3c2; text-decoration: none; margin: 0 8px;">Privacy Policy</a>
-                        <span style="color: #cbd5e0;">•</span>
-                        <a href="<?php echo BASE_URL; ?>/terms.php" style="color: #50e3c2; text-decoration: none; margin: 0 8px;">Terms of Service</a>
-                    </p>
-                </div>
-            </div>
+    <a class="back-home" href="<?php echo BASE_URL; ?>/">&larr; Home</a>
+
+    <div id="loginToast" class="login-toast" role="status" aria-live="polite">
+        <i class="fas fa-clock"></i>
+        <div>
+            <strong>Sesi berakhir</strong><br>
+            <small>Silakan login kembali untuk melanjutkan.</small>
         </div>
     </div>
-    
-    <script src="<?php echo BASE_URL; ?>/assets/js/main.js"></script>
+
+    <div class="login-container">
+        <div class="login-content">
+            <div class="login-logo">
+                <img src="<?php echo BASE_URL; ?>/assets/images/smk62.png" alt="Logo SMKN 62">
+            </div>
+
+            <div class="login-title">
+                <h1>File Manager SMKN62</h1>
+                <p>Masuk untuk mengakses sistem</p>
+            </div>
+
+            <?php if ($error): ?>
+                <div class="alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div><?php echo htmlspecialchars($error); ?></div>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($_GET['logout'])): ?>
+                <div class="alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    Anda telah berhasil keluar.
+                </div>
+            <?php endif; ?>
+
+            <div class="login-form">
+                <form method="POST" action="" autocomplete="off">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="username" name="username"
+                                   value="<?php echo htmlspecialchars($username); ?>"
+                                   placeholder="Masukkan username"
+                                   required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="password" name="password"
+                                   placeholder="Masukkan password"
+                                   required>
+                            <button type="button" class="toggle-password" onclick="togglePwd()" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye" id="pwdIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login">
+                        <i class="fas fa-sign-in-alt"></i> Masuk
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <footer class="page-footer">
+        <span>&copy; <?php echo date('Y'); ?> SMKN 62 Jakarta.</span>
+        <span class="sep">|</span>
+        <a href="<?php echo BASE_URL; ?>/pages/privacy">Privacy &amp; Policy</a>
+        <span class="sep">&middot;</span>
+        <a href="<?php echo BASE_URL; ?>/pages/terms">Terms of Service</a>
+    </footer>
+
+    <script src="<?php echo BASE_URL; ?>/assets/js/main.js?v=<?php echo urlencode(APP_VERSION); ?>"></script>
+    <script>
+        function togglePwd() {
+            var inp = document.getElementById('password');
+            var ico = document.getElementById('pwdIcon');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                ico.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                inp.type = 'password';
+                ico.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        // Session timeout toast (from old UI)
+        (function () {
+            try {
+                var url = new URL(window.location.href);
+                var params = url.searchParams;
+                var changed = false;
+
+                var hasVisitedKey = 'fm_login_visited_v1';
+                var hasVisited = false;
+                try {
+                    hasVisited = window.localStorage && window.localStorage.getItem(hasVisitedKey) === '1';
+                    if (window.localStorage) window.localStorage.setItem(hasVisitedKey, '1');
+                } catch (e) {}
+
+                var isTimeout = params.has('session_timeout') || (params.get('reason') === 'timeout');
+
+                if (hasVisited && isTimeout) {
+                    var toast = document.getElementById('loginToast');
+                    if (toast) {
+                        toast.classList.add('show');
+                        setTimeout(function () { toast.classList.remove('show'); }, 3500);
+                    }
+                }
+
+                if (params.has('session_timeout')) { params.delete('session_timeout'); changed = true; }
+                if (params.get('reason') === 'timeout') { params.delete('reason'); changed = true; }
+                if (changed) {
+                    var newUrl = url.pathname + (params.toString() ? ('?' + params.toString()) : '') + url.hash;
+                    window.history.replaceState({}, document.title, newUrl);
+                }
+            } catch (e) {}
+        })();
+
+        // PWA Mobile: close app on back button at login page
+        (function () {
+            var isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                            || window.navigator.standalone === true
+                            || document.referrer.includes('android-app://');
+            var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+                        || window.innerWidth <= 768;
+            if (!isStandalone || !isMobile) return;
+
+            if (window.history.state === null || !window.history.state.pwaLoginGuard) {
+                window.history.pushState({ pwaLoginGuard: true }, document.title, window.location.href);
+            }
+            window.addEventListener('popstate', function () {
+                try { window.close(); } catch (err) {}
+                setTimeout(function () {
+                    if (!window.closed) window.location.href = 'about:blank';
+                }, 50);
+            });
+        })();
+    </script>
 </body>
 </html>

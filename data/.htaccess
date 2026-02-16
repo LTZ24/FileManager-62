@@ -1,0 +1,64 @@
+# ==========================================================================
+# STRICT SECURITY — Block ALL web access to /data directory
+# Contains: credentials, tokens, configs, logs — NONE should be web-served
+# ==========================================================================
+
+# Disable directory listing & CGI
+Options -Indexes -ExecCGI
+
+# ── 1. Deny ALL requests (Apache 2.4+ / 2.2 fallback) ────────────────
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+</IfModule>
+
+# ── 2. Disable PHP execution inside /data (prevent webshell) ─────────
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+<FilesMatch "\.ph(p[345s]?|t|tml)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ── 3. Block sensitive file types explicitly ──────────────────────────
+<FilesMatch "\.(json|sql|log|key|pem|env|bak|old|ps1|txt|csv|xml|yml|yaml|toml|ini|conf|cfg|sh|bat|cmd)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ── 4. Block hidden files (dotfiles) ─────────────────────────────────
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ── 5. Remove server signature & ETag ────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header unset ETag
+    Header unset X-Powered-By
+</IfModule>
+FileETag None

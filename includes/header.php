@@ -1,3 +1,11 @@
+<?php
+// Make CSRF token available to all JS running on authenticated pages.
+$__csrfToken = function_exists('generateSecureToken') ? generateSecureToken() : '';
+?>
+<script>
+    window.APP_CSRF_TOKEN = <?php echo json_encode($__csrfToken, JSON_UNESCAPED_UNICODE); ?>;
+</script>
+
 <header class="header">
     <div class="header-left">
         <button class="menu-toggle" id="menuToggle">
@@ -55,13 +63,7 @@
         <div class="header-actions">
             <div class="user-menu" id="userMenuToggle">
                 <div class="user-avatar-small">
-                    <?php if (isset($_SESSION['user_picture']) && !empty($_SESSION['user_picture'])): ?>
-                        <img src="<?php echo htmlspecialchars($_SESSION['user_picture']); ?>" 
-                             alt="Profile" 
-                             style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
-                    <?php else: ?>
-                        <i class="fas fa-user-circle"></i>
-                    <?php endif; ?>
+                    <i class="fas fa-user-circle" style="font-size: 32px; color: #9ca3af;"></i>
                 </div>
                 <span><?php echo htmlspecialchars($_SESSION['user_name'] ?? $_SESSION['username'] ?? 'User'); ?></span>
                 <i class="fas fa-chevron-down dropdown-icon"></i>
@@ -71,17 +73,11 @@
             <div class="user-dropdown" id="userDropdown">
                 <div class="dropdown-header">
                     <div class="dropdown-avatar">
-                        <?php if (isset($_SESSION['user_picture']) && !empty($_SESSION['user_picture'])): ?>
-                            <img src="<?php echo htmlspecialchars($_SESSION['user_picture']); ?>" 
-                                 alt="Profile" 
-                                 style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
-                        <?php else: ?>
-                            <i class="fas fa-user-circle"></i>
-                        <?php endif; ?>
+                        <i class="fas fa-user-circle" style="font-size: 48px; color: #9ca3af;"></i>
                     </div>
                     <div class="dropdown-user-info">
                         <strong><?php echo htmlspecialchars($_SESSION['user_name'] ?? $_SESSION['username'] ?? 'User'); ?></strong>
-                        <span class="user-email"><?php echo htmlspecialchars($_SESSION['user_email'] ?? 'user@example.com'); ?></span>
+                        <span class="user-email"><?php echo htmlspecialchars($_SESSION['user_role'] ?? 'user'); ?></span>
                     </div>
                 </div>
 
@@ -94,21 +90,43 @@
                 <div class="dropdown-divider"></div>
 
                 <div class="dropdown-menu-items">
-                    <a href="<?php echo BASE_URL; ?>/pages/profile.php" class="dropdown-item">
+                    <a href="<?php echo BASE_URL; ?>/pages/profile" class="dropdown-item">
                         <i class="fas fa-user-circle"></i>
                         <span>Profil</span>
                     </a>
-                    <a href="<?php echo BASE_URL; ?>/pages/settings.php" class="dropdown-item">
+                    <a href="<?php echo BASE_URL; ?>/pages/settings" class="dropdown-item">
                         <i class="fas fa-cog"></i>
                         <span>Pengaturan</span>
                     </a>
                     
                     <div class="dropdown-divider"></div>
                     
-                    <a href="<?php echo BASE_URL; ?>/auth/logout.php" class="dropdown-item logout-item">
+                    <a href="<?php echo BASE_URL; ?>/auth/logout" class="dropdown-item logout-item">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>Keluar</span>
                     </a>
+                </div>
+
+                <!-- Static Upload Progress Section -->
+                <div id="uploadNotificationSection" class="upload-notification-section">
+                    <div class="dropdown-divider"></div>
+                    <div class="upload-dropdown-header-inline">
+                        <span><i class="fas fa-cloud-upload-alt"></i> Upload Progress</span>
+                        <div class="upload-dropdown-actions-inline">
+                            <button type="button" onclick="if(window.uploadManager) window.uploadManager.clearCompleted()" title="Hapus selesai">
+                                <i class="fas fa-broom"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="upload-dropdown-body-inline" id="uploadDropdownList">
+                        <div class="upload-dropdown-empty">
+                            <i class="fas fa-inbox"></i>
+                            <p>Tidak ada upload aktif</p>
+                        </div>
+                    </div>
+                    <div class="upload-dropdown-footer-inline" id="uploadDropdownFooter">
+                        <span id="uploadDropdownSummary">-</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -123,6 +141,8 @@
         const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
                          'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+                             'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
         const dayName = days[now.getDay()];
         const day = now.getDate();
@@ -132,15 +152,19 @@
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
 
-        const dateTimeString = `${dayName}, ${day} ${month} ${year} - ${hours}:${minutes}:${seconds} WIB`;
+        const fullDateTimeString = `${dayName}, ${day} ${month} ${year} - ${hours}:${minutes}:${seconds} WIB`;
+        const shortDateTimeString = `${dayName}, ${day} ${monthsShort[now.getMonth()]} ${year} ${hours}:${minutes} WIB`;
+        const useShort = (window.matchMedia && window.matchMedia('(max-width: 420px)').matches);
+        const headerDateTimeString = useShort ? shortDateTimeString : fullDateTimeString;
         const dateTimeElement = document.getElementById('currentDateTime');
         const dateTimeMobileElement = document.getElementById('currentDateTimeMobile');
         
         if (dateTimeElement) {
-            dateTimeElement.textContent = dateTimeString;
+            dateTimeElement.textContent = headerDateTimeString;
         }
         if (dateTimeMobileElement) {
-            dateTimeMobileElement.textContent = dateTimeString;
+            // Keep full datetime inside dropdown on mobile.
+            dateTimeMobileElement.textContent = fullDateTimeString;
         }
     }
 

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../../includes/ajax_helpers.php';
 
 requireLogin();
 
@@ -11,6 +12,9 @@ $selectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
 $categories = getFormCategories();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireRateLimit('forms_add_ctr');
+    requireValidCsrfToken(null);
+
     $title = sanitize($_POST['title']);
     $url = sanitize($_POST['url']);
     $description = sanitize($_POST['description'] ?? '');
@@ -23,9 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             if (addFormToSheets($title, $url, $category, $description)) {
-                // Clear all forms cache
+                // Clear all forms cache (global and category-specific)
                 foreach (array_keys($_SESSION) as $key) {
-                    if (strpos($key, 'forms_cache_') === 0) {
+                    if (strpos($key, 'forms_cache_') === 0 || strpos($key, 'category_') === 0) {
                         unset($_SESSION[$key]);
                     }
                 }
@@ -46,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tambah Form</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
         * {
             margin: 0;
@@ -217,6 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST" id="formForm">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateSecureToken()); ?>">
             <div class="form-group">
                 <label for="title">
                     <i class="fas fa-heading"></i> Judul Form

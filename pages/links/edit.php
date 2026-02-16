@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../../includes/ajax_helpers.php';
 
 requireLogin();
 
@@ -8,13 +9,13 @@ $id = isset($_GET['id']) ? intval($_GET['id']) : -1;
 $category = isset($_GET['category']) ? $_GET['category'] : '';
 
 if ($id < 0 || empty($category)) {
-    redirect(BASE_URL . '/pages/links/index.php');
+    redirect(BASE_URL . '/pages/links/');
 }
 
 $categories = getLinkCategories();
 
 if (!isset($categories[$category])) {
-    redirect(BASE_URL . '/pages/links/index.php?error=Kategori tidak valid');
+    redirect(BASE_URL . '/pages/links/?error=Kategori tidak valid');
 }
 
 $links = getLinksFromSheets($category);
@@ -29,13 +30,16 @@ foreach ($links as $l) {
 }
 
 if (!$link) {
-    redirect(BASE_URL . '/pages/links/index.php?error=Link tidak ditemukan');
+    redirect(BASE_URL . '/pages/links/?error=Link tidak ditemukan');
 }
 
 $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireRateLimit('links_edit', null, null, BASE_URL . '/pages/links/');
+    requireValidCsrfToken(BASE_URL . '/pages/links/');
+
     $title = sanitize($_POST['title']);
     $url = sanitize($_POST['url']);
     $newCategory = sanitize($_POST['category']);
@@ -50,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($newCategory !== $category) {
                 if (deleteLinkFromSheets($id, $category) && addLinkToSheets($title, $url, $newCategory)) {
                     $success = 'Link berhasil dipindahkan ke kategori baru!';
-                    header("refresh:2;url=index.php?success=Link berhasil diupdate&category=" . $newCategory);
+                    header("refresh:2;url=./?success=Link berhasil diupdate&category=" . $newCategory);
                 } else {
                     $error = 'Gagal memindahkan link ke kategori baru!';
                 }
@@ -58,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Same category, just update
                 if (updateLinkInSheets($id, $title, $url, $category)) {
                     $success = 'Link berhasil diupdate!';
-                    header("refresh:2;url=index.php?success=Link berhasil diupdate&category=" . $category);
+                    header("refresh:2;url=./?success=Link berhasil diupdate&category=" . $category);
                 } else {
                     $error = 'Gagal mengupdate link di Google Sheets!';
                 }
@@ -76,9 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Link - <?php echo APP_NAME; ?></title>
     <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>/assets/images/smk62.png">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/ajax.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css?v=<?php echo urlencode(APP_VERSION); ?>">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/ajax.css?v=<?php echo urlencode(APP_VERSION); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
         .form-container {
             background: var(--white);
@@ -215,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="page-header">
                 <h1><i class="fas fa-edit"></i> Edit Link</h1>
-                <a href="index.php" class="btn btn-secondary">
+                <a href="./" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Kembali
                 </a>
             </div>
@@ -242,6 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <form method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateSecureToken()); ?>">
                     <div class="form-group">
                         <label for="category">
                             <i class="fas fa-folder"></i> Kategori *
@@ -280,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     
                     <div class="form-actions">
-                        <a href="index.php" class="btn btn-secondary">
+                        <a href="./" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Batal
                         </a>
                         <button type="submit" class="btn btn-primary">
@@ -294,7 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     
-    <script src="<?php echo BASE_URL; ?>/assets/js/ajax.js"></script>
-    <script src="<?php echo BASE_URL; ?>/assets/js/main.js"></script>
+    <script src="<?php echo BASE_URL; ?>/assets/js/ajax.js?v=<?php echo urlencode(APP_VERSION); ?>"></script>
+    <script src="<?php echo BASE_URL; ?>/assets/js/main.js?v=<?php echo urlencode(APP_VERSION); ?>"></script>
 </body>
 </html>

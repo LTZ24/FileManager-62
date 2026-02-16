@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../../includes/ajax_helpers.php';
 
 requireLogin();
 
@@ -12,14 +13,23 @@ $selectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
 $categories = getLinkCategories();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireRateLimit('links_add', null, null, BASE_URL . '/pages/links/index');
+    requireValidCsrfToken(BASE_URL . '/pages/links/index');
+
     $title = sanitize($_POST['title']);
     $url = sanitize($_POST['url']);
     $category = sanitize($_POST['category']);
     
     if (empty($title) || empty($url) || empty($category)) {
         $error = 'Semua field harus diisi!';
+        if (isAjaxRequest()) {
+            ajaxError($error);
+        }
     } elseif (!isset($categories[$category])) {
         $error = 'Kategori tidak valid!';
+        if (isAjaxRequest()) {
+            ajaxError($error);
+        }
     } else {
         try {
             if (addLinkToSheets($title, $url, $category)) {
@@ -30,7 +40,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unset($_SESSION['dashboard_cache']);
                 unset($_SESSION['dashboard_cache_time']);
                 
+                // Clear category cache
+                $categoryKey = 'category_' . $category . '_links';
+                if (isset($_SESSION[$categoryKey])) {
+                    unset($_SESSION[$categoryKey]);
+                    unset($_SESSION[$categoryKey . '_time']);
+                }
+                
                 $success = 'Link berhasil ditambahkan!';
+                
+                // Return JSON for AJAX requests
+                if (isAjaxRequest()) {
+                    ajaxSuccess($success);
+                }
                 
                 if ($isModal) {
                     echo "<script>
@@ -44,13 +66,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }, 1500);
                     </script>";
                 } else {
-                    header("refresh:2;url=index.php?success=Link berhasil ditambahkan&category=" . $category);
+                    header("refresh:2;url=./?success=Link berhasil ditambahkan&category=" . $category);
                 }
             } else {
-                $error = 'Gagal menambahkan link ke Google Sheets!';
+                $sheetName = getLinkSheetName($category);
+                $detail = $_SESSION['last_sheets_error'] ?? '';
+                $error = "Gagal menambahkan link! Pastikan tab '$sheetName' ada di Google Sheets.";
+                if (!empty($detail)) {
+                    $error .= " Detail: " . $detail;
+                }
+                if (isAjaxRequest()) {
+                    ajaxError($error);
+                }
             }
         } catch (Exception $e) {
             $error = 'Terjadi kesalahan: ' . $e->getMessage();
+            if (isAjaxRequest()) {
+                ajaxError($error);
+            }
         }
     }
 }
@@ -62,9 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tambah Link - <?php echo APP_NAME; ?></title>
     <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>/assets/images/smk62.png">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/ajax.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css?v=<?php echo urlencode(APP_VERSION); ?>">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/ajax.css?v=<?php echo urlencode(APP_VERSION); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
         .form-container {
             background: var(--white);
@@ -225,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php include __DIR__ . '/../../includes/page-navigation.php'; ?>
             
             <div class="page-header">
-                <a href="index.php" class="btn btn-secondary">
+                <a href="./" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Kembali
                 </a>
             </div>
@@ -255,6 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <form method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateSecureToken()); ?>">
                     <?php if (!$selectedCategory): ?>
                     <div class="form-group">
                         <label for="category">
@@ -304,7 +338,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="form-actions">
                         <?php if (!$isModal): ?>
-                        <a href="index.php" class="btn btn-secondary">
+                        <a href="./" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Batal
                         </a>
                         <?php endif; ?>
@@ -323,7 +357,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <?php endif; ?>
     
-    <script src="<?php echo BASE_URL; ?>/assets/js/ajax.js"></script>
-    <script src="<?php echo BASE_URL; ?>/assets/js/main.js"></script>
+    <script src="<?php echo BASE_URL; ?>/assets/js/ajax.js?v=<?php echo urlencode(APP_VERSION); ?>"></script>
+    <script src="<?php echo BASE_URL; ?>/assets/js/main.js?v=<?php echo urlencode(APP_VERSION); ?>"></script>
 </body>
 </html>

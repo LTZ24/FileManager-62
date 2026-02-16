@@ -53,7 +53,7 @@
         
         if (idleTime >= CONFIG.SESSION_TIMEOUT) {
             console.log('[Session] Timeout reached, redirecting to login...');
-            window.location.href = getBaseUrl() + '/auth/login.php?session_timeout=1';
+            window.location.href = getBaseUrl() + '/auth/login?session_timeout=1';
         }
     }
     

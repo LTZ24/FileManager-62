@@ -1,13 +1,14 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../../includes/ajax_helpers.php';
 
 requireLogin();
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : -1;
 
 if ($id < 0) {
-    redirect(BASE_URL . '/pages/forms/index.php');
+    redirect(BASE_URL . '/pages/forms/');
 }
 
 $forms = getFormsFromSheets();
@@ -21,13 +22,16 @@ foreach ($forms as $f) {
 }
 
 if (!$form) {
-    redirect(BASE_URL . '/pages/forms/index.php?error=Form tidak ditemukan');
+    redirect(BASE_URL . '/pages/forms/?error=Form tidak ditemukan');
 }
 
 $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireRateLimit('forms_edit', null, null, BASE_URL . '/pages/forms/');
+    requireValidCsrfToken(BASE_URL . '/pages/forms/');
+
     $title = sanitize($_POST['title']);
     $url = sanitize($_POST['url']);
     
@@ -37,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             if (updateFormInSheets($id, $title, $url)) {
                 $success = 'Form berhasil diupdate!';
-                header("refresh:2;url=index.php?success=Form berhasil diupdate");
+                header("refresh:2;url=./?success=Form berhasil diupdate");
             } else {
                 $error = 'Gagal mengupdate form di Google Sheets!';
             }
@@ -54,9 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Form - <?php echo APP_NAME; ?></title>
     <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>/assets/images/smk62.png">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/ajax.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css?v=<?php echo urlencode(APP_VERSION); ?>">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/ajax.css?v=<?php echo urlencode(APP_VERSION); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
         .form-container {
             background: var(--white);
@@ -193,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h1>Edit Form</h1>
-                <a href="index.php" class="btn btn-secondary">
+                <a href="./" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Kembali
                 </a>
             </div>
@@ -220,6 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <form method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateSecureToken()); ?>">
                     <div class="form-group">
                         <label for="title">
                             <i class="fas fa-heading"></i> Judul Form
@@ -241,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     
                     <div class="form-actions">
-                        <a href="index.php" class="btn btn-secondary">
+                        <a href="./" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Batal
                         </a>
                         <button type="submit" class="btn btn-primary">
@@ -255,7 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     
-    <script src="<?php echo BASE_URL; ?>/assets/js/ajax.js"></script>
-    <script src="<?php echo BASE_URL; ?>/assets/js/main.js"></script>
+    <script src="<?php echo BASE_URL; ?>/assets/js/ajax.js?v=<?php echo urlencode(APP_VERSION); ?>"></script>
+    <script src="<?php echo BASE_URL; ?>/assets/js/main.js?v=<?php echo urlencode(APP_VERSION); ?>"></script>
 </body>
 </html>

@@ -1,29 +1,48 @@
-const CACHE_VERSION = 'v1.0.0';
+// Bump this when deploying asset changes to avoid stale caches.
+const CACHE_VERSION = 'v1.8.0';
 const CACHE_NAME = `db-guru-62-${CACHE_VERSION}`;
-const OFFLINE_URL = '/Data-Base-Guru-v2/offline.html';
+const OFFLINE_URL = '/offline.html';
 
 const STATIC_CACHE_URLS = [
-    '/Data-Base-Guru-v2/',
-    '/Data-Base-Guru-v2/index.php',
-    '/Data-Base-Guru-v2/offline.html',
-    '/Data-Base-Guru-v2/assets/css/style.css',
-    '/Data-Base-Guru-v2/assets/css/ajax.css',
-    '/Data-Base-Guru-v2/assets/js/main.js',
-    '/Data-Base-Guru-v2/assets/js/ajax.js',
-    '/Data-Base-Guru-v2/assets/js/session-keepalive.js',
-    '/Data-Base-Guru-v2/assets/js/pwa.js',
-    '/Data-Base-Guru-v2/assets/images/smk62.png',
-    '/Data-Base-Guru-v2/assets/images/icons/icon-192x192.png',
-    '/Data-Base-Guru-v2/assets/images/icons/icon-512x512.png',
+    '/',
+    '/offline.html',
+    '/manifest.json',
+    '/assets/css/style.css',
+    '/assets/css/ajax.css',
+    '/assets/js/main.js',
+    '/assets/js/ajax.js',
+    '/assets/js/upload-manager.js',
+    '/assets/js/table-pagination.js',
+    '/assets/js/session-keepalive.js',
+    '/assets/js/pwa.js',
+    '/assets/images/smk62.png',
+    // PWA Icons - all sizes
+    '/assets/images/icons/favicon-16x16.png',
+    '/assets/images/icons/favicon-32x32.png',
+    '/assets/images/icons/apple-touch-icon.png',
+    '/assets/images/icons/icon-72x72.png',
+    '/assets/images/icons/icon-96x96.png',
+    '/assets/images/icons/icon-128x128.png',
+    '/assets/images/icons/icon-144x144.png',
+    '/assets/images/icons/icon-152x152.png',
+    '/assets/images/icons/icon-192x192.png',
+    '/assets/images/icons/icon-384x384.png',
+    '/assets/images/icons/icon-512x512.png',
+    '/assets/images/icons/icon-192x192-maskable.png',
+    '/assets/images/icons/icon-512x512-maskable.png',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
 
 const DYNAMIC_CACHE_URLS = [
-    '/Data-Base-Guru-v2/pages/files/index.php',
-    '/Data-Base-Guru-v2/pages/files/upload.php',
-    '/Data-Base-Guru-v2/pages/links/index.php',
-    '/Data-Base-Guru-v2/pages/forms/index.php',
-    '/Data-Base-Guru-v2/pages/settings.php'
+    '/pages/files/',
+    '/pages/files/upload',
+    '/pages/links/',
+    '/pages/forms/',
+    '/pages/settings',
+    '/pages/category/kesiswaan',
+    '/pages/category/kurikulum',
+    '/pages/category/sapras-humas',
+    '/pages/category/tata-usaha'
 ];
 
 self.addEventListener('install', (event) => {
@@ -70,6 +89,16 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
+
+    // Don't handle non-http(s) requests (e.g. chrome-extension://)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        return;
+    }
+
+    // Only handle same-origin requests
+    if (url.origin !== location.origin) {
+        return;
+    }
     
     if (request.method !== 'GET') {
         return;
@@ -79,12 +108,31 @@ self.addEventListener('fetch', (event) => {
         return;
     }
     
-    if (url.pathname.includes('/includes/api.php')) {
+    if (url.pathname.includes('/includes/api')) {
+        event.respondWith(networkFirst(request));
+        return;
+    }
+
+    // Critical assets should prefer network so UI/JS updates take effect.
+    // This avoids cases where old cached main.js/style.css causes missing functions or layout changes.
+    const criticalAssets = new Set([
+        '/assets/js/main.js',
+        '/assets/js/ajax.js',
+        '/assets/js/pwa.js',
+        '/assets/js/upload-manager.js',
+        '/assets/js/table-pagination.js',
+        '/assets/css/style.css',
+        '/assets/css/ajax.css'
+    ]);
+
+    if (criticalAssets.has(url.pathname)) {
         event.respondWith(networkFirst(request));
         return;
     }
     
-    if (url.pathname.endsWith('.php')) {
+    // Pages now use clean URLs (no .php) via .htaccess rewrite.
+    // Keep this check for any direct .php access (backward compat).
+    if (url.pathname.endsWith('.php') || url.pathname.startsWith('/pages/') || url.pathname.startsWith('/api/')) {
         event.respondWith(networkFirst(request));
         return;
     }
@@ -99,6 +147,11 @@ self.addEventListener('fetch', (event) => {
 
 async function cacheFirst(request) {
     try {
+        const reqUrl = new URL(request.url);
+        if (reqUrl.protocol !== 'http:' && reqUrl.protocol !== 'https:') {
+            return fetch(request);
+        }
+
         const cachedResponse = await caches.match(request);
         
         if (cachedResponse) {
@@ -111,7 +164,10 @@ async function cacheFirst(request) {
         
         if (networkResponse.ok) {
             const cache = await caches.open(CACHE_NAME);
-            cache.put(request, networkResponse.clone());
+            // Cache API doesn't support non-http(s) schemes
+            if (reqUrl.origin === location.origin) {
+                await cache.put(request, networkResponse.clone());
+            }
         }
         
         return networkResponse;
@@ -130,12 +186,19 @@ async function cacheFirst(request) {
 
 async function networkFirst(request) {
     try {
+        const reqUrl = new URL(request.url);
+        if (reqUrl.protocol !== 'http:' && reqUrl.protocol !== 'https:') {
+            return fetch(request);
+        }
+
         console.log('[SW] Network first:', request.url);
         const networkResponse = await fetch(request);
         
         if (networkResponse.ok) {
             const cache = await caches.open(CACHE_NAME);
-            cache.put(request, networkResponse.clone());
+            if (reqUrl.origin === location.origin) {
+                await cache.put(request, networkResponse.clone());
+            }
         }
         
         return networkResponse;
@@ -204,16 +267,16 @@ self.addEventListener('push', (event) => {
     console.log('[SW] Push notification received');
     
     const options = {
-        body: event.data ? event.data.text() : 'Notifikasi baru dari Database Guru',
-        icon: '/Data-Base-Guru-v2/assets/images/icons/icon-192x192.png',
-        badge: '/Data-Base-Guru-v2/assets/images/icons/icon-72x72.png',
+        body: event.data ? event.data.text() : 'Notifikasi baru dari FileManager SMKN62',
+        icon: '/assets/images/icons/icon-192x192.png',
+        badge: '/assets/images/icons/icon-72x72.png',
         vibrate: [200, 100, 200],
         tag: 'db-guru-notification',
         requireInteraction: false
     };
     
     event.waitUntil(
-        self.registration.showNotification('Database Guru SMKN 62', options)
+        self.registration.showNotification('FileManager SMKN62', options)
     );
 });
 
@@ -223,6 +286,6 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     
     event.waitUntil(
-        clients.openWindow('/Data-Base-Guru-v2/index.php')
+        clients.openWindow('/')
     );
 });

@@ -4,9 +4,9 @@
 
 # Enable Rewrite Engine
 RewriteEngine On
-RewriteBase /Data-Base-Guru-v2/
+RewriteBase /filemanager.smkn62.sch.id/
 
-# Remove .php extension from URLs
+# Remove .php extension from URLs (for GET requests only, to avoid POST redirect issues)
 # If the request is for a file that exists, serve it directly
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -14,7 +14,8 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}.php -f
 RewriteRule ^(.+)$ $1.php [L]
 
-# Redirect .php URLs to non-.php URLs
+# Redirect .php URLs to non-.php URLs (GET only - POST should not be redirected)
+RewriteCond %{REQUEST_METHOD} GET [NC]
 RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s([^.]+)\.php [NC]
 RewriteRule ^ %1 [R=301,L]
 
@@ -27,7 +28,7 @@ RewriteRule ^ %1 [R=301,L]
 Options -Indexes
 
 # Prevent access to sensitive files
-<FilesMatch "^(config\.php|config_ex\.php|\.env|\.git|composer\.json|composer\.lock)$">
+<FilesMatch "^(config\.php|\.env|\.git|composer\.json|composer\.lock)$">
     Require all denied
 </FilesMatch>
 
@@ -36,17 +37,26 @@ Options -Indexes
     Require all denied
 </FilesMatch>
 
-# Custom Error Pages (hide server info)
-ErrorDocument 400 /Data-Base-Guru-v2/error.php?code=400
-ErrorDocument 401 /Data-Base-Guru-v2/error.php?code=401
-ErrorDocument 403 /Data-Base-Guru-v2/error.php?code=403
-ErrorDocument 404 /Data-Base-Guru-v2/error.php?code=404
-ErrorDocument 500 /Data-Base-Guru-v2/error.php?code=500
+# Block accidental exposure of Google Service Account JSON keys
+<FilesMatch "(?i)(service-account|service_account|google-service-account|google-oauth-token|credentials|smkn-62-database).*\.json$">
+    Require all denied
+</FilesMatch>
 
-# Limit file upload size (10MB)
-php_value upload_max_filesize 10M
-php_value post_max_size 10M
+# Custom Error Pages (hide server info)
+ErrorDocument 400 /error.php?code=400
+ErrorDocument 401 /error.php?code=401
+ErrorDocument 403 /error.php?code=403
+ErrorDocument 404 /error.php?code=404
+ErrorDocument 500 /error.php?code=500
+
+# Limit file upload size (100MB)
+php_value upload_max_filesize 100M
+php_value post_max_size 105M
+php_value max_execution_time 300
+php_value max_input_time 300
 
 # Session security
 php_flag session.cookie_httponly on
 php_value session.gc_maxlifetime 1800
+
+
