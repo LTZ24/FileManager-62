@@ -7,37 +7,10 @@ requireLogin();
 $success = isset($_GET['success']) ? $_GET['success'] : '';
 $error = isset($_GET['error']) ? $_GET['error'] : '';
 
-$cacheTime = 300;
-
 $selectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
 $categories = getLinkCategories();
-
-$cacheKey = 'links_cache_' . ($selectedCategory ?: 'all');
-
-if (isset($_SESSION[$cacheKey]) && 
-    isset($_SESSION[$cacheKey . '_time']) && 
-    (time() - $_SESSION[$cacheKey . '_time']) < $cacheTime) {
-    $links = $_SESSION[$cacheKey];
-} else {
-    if ($selectedCategory && isset($categories[$selectedCategory])) {
-        $links = getLinksFromSheets($selectedCategory);
-    } else {
-        $links = [];
-        foreach ($categories as $key => $category) {
-            $categoryLinks = getLinksFromSheets($key);
-            foreach ($categoryLinks as $link) {
-                $link['category'] = $key;
-                $link['category_name'] = $category['name'];
-                $link['category_color'] = $category['color'];
-                $link['category_icon'] = $category['icon'];
-                $links[] = $link;
-            }
-        }
-    }
-    $_SESSION[$cacheKey] = $links;
-    $_SESSION[$cacheKey . '_time'] = time();
-}
+// Data loaded via AJAX with skeleton loading
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -347,6 +320,20 @@ if (isset($_SESSION[$cacheKey]) &&
                 overflow-y: auto;
             }
         }
+        
+        /* Skeleton Loading */
+        .skeleton-loader { overflow-x: auto; }
+        .skeleton-loader table { width: 100%; border-collapse: collapse; }
+        .skeleton-row td { padding: 0.625rem 0.75rem; border-bottom: 1px solid #f1f5f9; }
+        .skeleton-cell { display: flex; align-items: center; gap: 0.5rem; }
+        .skeleton-icon { width: 32px; height: 32px; border-radius: 0.375rem; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; flex-shrink: 0; }
+        .skeleton-text { flex: 1; display: flex; flex-direction: column; gap: 0.375rem; }
+        .skeleton-line { height: 12px; border-radius: 0.25rem; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        .skeleton-line.short { width: 40%; }
+        .skeleton-line.medium { width: 55%; }
+        .skeleton-actions { display: flex; gap: 0.25rem; justify-content: center; }
+        .skeleton-btn { width: 30px; height: 30px; border-radius: 0.375rem; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     </style>
 </head>
 <body>
@@ -374,7 +361,7 @@ if (isset($_SESSION[$cacheKey]) &&
             
             <div class="links-container">
                 <div class="links-header">
-                    <h2><i class="fas fa-link"></i> Daftar Links (<?php echo count($links); ?>)</h2>
+                    <h2><i class="fas fa-link"></i> Daftar Links (<span id="linksCount">...</span>)</h2>
                     <button type="button" class="btn btn-primary" style="padding: 0.5rem 0.875rem; font-size: 0.875rem;" onclick="openAddLinkModal()">
                         <i class="fas fa-plus"></i> Tambah Link
                     </button>
@@ -411,87 +398,29 @@ if (isset($_SESSION[$cacheKey]) &&
                     <?php endforeach; ?>
                 </div>
                 
-                <?php if (empty($links)): ?>
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p>Belum ada link. Klik tombol "Tambah Link" untuk menambahkan.</p>
-                    </div>
-                <?php else: ?>
+                <!-- Skeleton Loader -->
+                <div id="skeletonLinks" class="skeleton-loader">
+                    <table>
+                        <thead><tr><th style="width: 35%;">Judul</th><th style="width: 25%;">URL</th><th style="width: 12%;">Kategori</th><th style="width: 28%; text-align: center;">Aksi</th></tr></thead>
+                        <tbody>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-line short"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-line short"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-line short"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-line short"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-line short"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Data Table -->
+                <div id="linksTableWrapper" style="display: none;">
+                    <div id="linksEmptyState" class="empty-state" style="display: none;"><i class="fas fa-inbox"></i><p>Belum ada link. Klik tombol "Tambah Link" untuk menambahkan.</p></div>
                     <div style="overflow-x: auto;">
                         <table id="links-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 35%;">Judul</th>
-                                    <th style="width: 25%;">URL</th>
-                                    <th style="width: 12%;">Kategori</th>
-                                    <th style="width: 28%; text-align: center;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php 
-                                $linkIndex = 0;
-                                foreach ($links as $link): 
-                                ?>
-                                    <tr>
-                                        <td>
-                                            <div class="file-info">
-                                                <div class="file-icon">
-                                                    <i class="fas fa-link"></i>
-                                                </div>
-                                                <div class="file-details">
-                                                    <span class="file-name"><?php echo htmlspecialchars($link['title']); ?></span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style="color: #64748b; font-size: 0.8125rem;">
-                                            <a href="<?php echo htmlspecialchars($link['url']); ?>" 
-                                               target="_blank" 
-                                               style="color: var(--primary-color); text-decoration: none;">
-                                                <?php 
-                                                $url = $link['url'];
-                                                echo htmlspecialchars(strlen($url) > 40 ? substr($url, 0, 40) . '...' : $url); 
-                                                ?>
-                                                <i class="fas fa-external-link-alt" style="font-size: 0.75rem; margin-left: 0.25rem;"></i>
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <?php if (isset($link['category_name'])): ?>
-                                                <span class="category-badge" style="background: <?php echo $link['category_color']; ?>">
-                                                    <i class="fas <?php echo $categories[$link['category']]['icon']; ?>"></i>
-                                                    <?php echo $link['category_name']; ?>
-                                                </span>
-                                            <?php else: ?>
-                                                <span style="color: #64748b; font-size: 0.8125rem;">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td style="text-align: center;">
-                                            <div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
-                                                <button onclick="viewLinkDetail(<?php echo $linkIndex; ?>)" 
-                                                        class="btn btn-sm btn-info" title="Detail" 
-                                                        style="padding: 0.375rem 0.625rem; font-size: 0.8125rem;">
-                                                    <i class="fas fa-info-circle"></i>
-                                                </button>
-                                                <button onclick="editLink(<?php echo $linkIndex; ?>)" 
-                                                        class="btn btn-sm btn-warning" title="Edit" 
-                                                        style="padding: 0.375rem 0.625rem; font-size: 0.8125rem;">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button onclick="deleteLink(<?php echo $linkIndex; ?>)" 
-                                                        class="btn btn-sm btn-danger" title="Hapus" 
-                                                        style="padding: 0.375rem 0.625rem; font-size: 0.8125rem;">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php 
-                                $linkIndex++;
-                                endforeach; 
-                                ?>
-                            </tbody>
+                            <thead><tr><th style="width: 35%;">Judul</th><th style="width: 25%;">URL</th><th style="width: 12%;">Kategori</th><th style="width: 28%; text-align: center;">Aksi</th></tr></thead>
+                            <tbody></tbody>
                         </table>
                     </div>
-                <?php endif; ?>
+                </div>
             </div>
             
             <?php include __DIR__ . '/../../includes/footer.php'; ?>
@@ -630,7 +559,7 @@ if (isset($_SESSION[$cacheKey]) &&
     
     <script>
         // Store links data for JavaScript access
-        let linksData = <?php echo json_encode($links); ?>;
+        let linksData = [];
         const BASE_URL = <?php echo json_encode(BASE_URL); ?>;
         const LINKS_DATA_URL = BASE_URL + '/api/links-data';
     </script>
@@ -686,7 +615,22 @@ if (isset($_SESSION[$cacheKey]) &&
 
         function renderLinksTable() {
             const tbody = document.querySelector('#links-table tbody');
+            const tableEl = document.getElementById('links-table');
+            const emptyState = document.getElementById('linksEmptyState');
+            const countEl = document.getElementById('linksCount');
             if (!tbody) return;
+
+            if (countEl) countEl.textContent = (linksData || []).length;
+
+            // Handle empty state
+            if (!linksData || linksData.length === 0) {
+                if (tableEl) tableEl.style.display = 'none';
+                if (emptyState) emptyState.style.display = '';
+                return;
+            } else {
+                if (tableEl) tableEl.style.display = '';
+                if (emptyState) emptyState.style.display = 'none';
+            }
 
             const rowsHtml = (linksData || []).map((link, index) => {
                 const title = escapeHtml(link.title);
@@ -736,13 +680,34 @@ if (isset($_SESSION[$cacheKey]) &&
         }
 
         async function reloadLinksTable() {
-            const category = getSelectedCategoryFromUrl();
-            const url = new URL(LINKS_DATA_URL, window.location.origin);
-            if (category) url.searchParams.set('category', category);
+            const skeleton = document.getElementById('skeletonLinks');
+            const wrapper = document.getElementById('linksTableWrapper');
+            const emptyState = document.getElementById('linksEmptyState');
+            const tableEl = document.getElementById('links-table');
 
-            const data = await fetchJson(url.toString());
-            linksData = (data && data.data && data.data.links) ? data.data.links : [];
-            renderLinksTable();
+            try {
+                const category = getSelectedCategoryFromUrl();
+                const url = new URL(LINKS_DATA_URL, window.location.origin);
+                if (category) url.searchParams.set('category', category);
+                url.searchParams.set('ajax', '1');
+                url.searchParams.set('_t', Date.now());
+
+                const data = await fetchJson(url.toString());
+                linksData = (data && data.data && data.data.links) ? data.data.links : [];
+                renderLinksTable();
+            } catch (e) {
+                console.error('Failed to load links:', e);
+                if (emptyState) {
+                    emptyState.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h3>Gagal Memuat Data</h3><p>Terjadi kesalahan saat memuat link. <a href="javascript:void(0)" onclick="reloadLinksTable()">Coba lagi</a></p>';
+                    emptyState.style.display = '';
+                }
+                if (tableEl) tableEl.style.display = 'none';
+                const countEl = document.getElementById('linksCount');
+                if (countEl) countEl.textContent = '!';
+            } finally {
+                if (skeleton) skeleton.style.display = 'none';
+                if (wrapper) wrapper.style.display = '';
+            }
         }
 
         function openAddLinkModal() {
@@ -966,13 +931,16 @@ if (isset($_SESSION[$cacheKey]) &&
             }
         }
         
-        // Initialize Table Pagination
+        // Initialize Table Pagination and lazy load
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize pagination with 10 rows per page
             const linksPagination = initTablePagination('links-table', {
                 rowsPerPage: 10,
                 rowsPerPageOptions: [10, 25, 50, 100]
             });
+
+            // Lazy load links via AJAX (skeleton shown until data arrives)
+            reloadLinksTable();
         });
     </script>
 </body>

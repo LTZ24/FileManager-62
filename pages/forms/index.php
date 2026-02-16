@@ -7,37 +7,10 @@ requireLogin();
 $success = isset($_GET['success']) ? $_GET['success'] : '';
 $error = isset($_GET['error']) ? $_GET['error'] : '';
 
-$cacheTime = 300;
-
 $selectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
 $categories = getFormCategories();
-
-$cacheKey = 'forms_cache_' . ($selectedCategory ?: 'all');
-
-if (isset($_SESSION[$cacheKey]) && 
-    isset($_SESSION[$cacheKey . '_time']) && 
-    (time() - $_SESSION[$cacheKey . '_time']) < $cacheTime) {
-    $forms = $_SESSION[$cacheKey];
-} else {
-    if ($selectedCategory && isset($categories[$selectedCategory])) {
-        $forms = getFormsFromSheets($selectedCategory);
-    } else {
-        $forms = [];
-        foreach ($categories as $key => $category) {
-            $categoryForms = getFormsFromSheets($key);
-            foreach ($categoryForms as $form) {
-                $form['category'] = $key;
-                $form['category_name'] = $category['name'];
-                $form['category_color'] = $category['color'];
-                $form['category_icon'] = $category['icon'];
-                $forms[] = $form;
-            }
-        }
-    }
-    $_SESSION[$cacheKey] = $forms;
-    $_SESSION[$cacheKey . '_time'] = time();
-}
+// Data loaded via AJAX with skeleton loading
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -52,6 +25,7 @@ if (isset($_SESSION[$cacheKey]) &&
     
     <link rel="icon" type="image/png" href="<?php echo BASE_URL; ?>/assets/images/smk62.png">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css?v=<?php echo urlencode(APP_VERSION); ?>">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/ajax.css?v=<?php echo urlencode(APP_VERSION); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous">
     <style>
         .forms-container {
@@ -346,6 +320,20 @@ if (isset($_SESSION[$cacheKey]) &&
                 overflow-y: auto;
             }
         }
+        
+        /* Skeleton Loading */
+        .skeleton-loader { overflow-x: auto; }
+        .skeleton-loader table { width: 100%; border-collapse: collapse; }
+        .skeleton-row td { padding: 0.625rem 0.75rem; border-bottom: 1px solid #f1f5f9; }
+        .skeleton-cell { display: flex; align-items: center; gap: 0.5rem; }
+        .skeleton-icon { width: 32px; height: 32px; border-radius: 0.375rem; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; flex-shrink: 0; }
+        .skeleton-text { flex: 1; display: flex; flex-direction: column; gap: 0.375rem; }
+        .skeleton-line { height: 12px; border-radius: 0.25rem; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        .skeleton-line.short { width: 40%; }
+        .skeleton-line.medium { width: 55%; }
+        .skeleton-actions { display: flex; gap: 0.25rem; justify-content: center; }
+        .skeleton-btn { width: 30px; height: 30px; border-radius: 0.375rem; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     </style>
 </head>
 <body>
@@ -373,7 +361,7 @@ if (isset($_SESSION[$cacheKey]) &&
             
             <div class="forms-container">
                 <div class="forms-header">
-                    <h2><i class="fas fa-file-alt"></i> Daftar Forms (<?php echo count($forms); ?>)</h2>
+                    <h2><i class="fas fa-file-alt"></i> Daftar Forms (<span id="formsCount">...</span>)</h2>
                     <button type="button" class="btn btn-primary" style="padding: 0.5rem 0.875rem; font-size: 0.875rem;" onclick="openAddFormModal()">
                         <i class="fas fa-plus"></i> Tambah Form
                     </button>
@@ -410,87 +398,29 @@ if (isset($_SESSION[$cacheKey]) &&
                     <?php endforeach; ?>
                 </div>
                 
-                <?php if (empty($forms)): ?>
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p>Belum ada form. Klik tombol "Tambah Form" untuk menambahkan.</p>
-                    </div>
-                <?php else: ?>
+                <!-- Skeleton Loader -->
+                <div id="skeletonForms" class="skeleton-loader">
+                    <table>
+                        <thead><tr><th style="width: 35%;">Judul</th><th style="width: 25%;">URL</th><th style="width: 12%;">Kategori</th><th style="width: 28%; text-align: center;">Aksi</th></tr></thead>
+                        <tbody>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-line short"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-line short"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-line short"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-line short"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                            <tr class="skeleton-row"><td><div class="skeleton-cell"><div class="skeleton-icon"></div><div class="skeleton-text"><div class="skeleton-line"></div></div></div></td><td><div class="skeleton-line medium"></div></td><td><div class="skeleton-line short"></div></td><td><div class="skeleton-actions"><div class="skeleton-btn"></div><div class="skeleton-btn"></div><div class="skeleton-btn"></div></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Data Table -->
+                <div id="formsTableWrapper" style="display: none;">
+                    <div id="formsEmptyState" class="empty-state" style="display: none;"><i class="fas fa-inbox"></i><p>Belum ada form. Klik tombol "Tambah Form" untuk menambahkan.</p></div>
                     <div style="overflow-x: auto;">
                         <table id="forms-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 35%;">Judul</th>
-                                    <th style="width: 25%;">URL</th>
-                                    <th style="width: 12%;">Kategori</th>
-                                    <th style="width: 28%; text-align: center;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php 
-                                $formIndex = 0;
-                                foreach ($forms as $form): 
-                                ?>
-                                    <tr>
-                                        <td>
-                                            <div class="file-info">
-                                                <div class="file-icon">
-                                                    <i class="fas fa-file-alt"></i>
-                                                </div>
-                                                <div class="file-details">
-                                                    <span class="file-name"><?php echo htmlspecialchars($form['title']); ?></span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style="color: #64748b; font-size: 0.8125rem;">
-                                            <a href="<?php echo htmlspecialchars($form['url']); ?>" 
-                                               target="_blank" 
-                                               style="color: var(--primary-color); text-decoration: none;">
-                                                <?php 
-                                                $url = $form['url'];
-                                                echo htmlspecialchars(strlen($url) > 40 ? substr($url, 0, 40) . '...' : $url); 
-                                                ?>
-                                                <i class="fas fa-external-link-alt" style="font-size: 0.75rem; margin-left: 0.25rem;"></i>
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <?php if (isset($form['category_name'])): ?>
-                                                <span class="category-badge" style="background: <?php echo $form['category_color']; ?>">
-                                                    <i class="fas <?php echo $categories[$form['category']]['icon']; ?>"></i>
-                                                    <?php echo $form['category_name']; ?>
-                                                </span>
-                                            <?php else: ?>
-                                                <span style="color: #64748b; font-size: 0.8125rem;">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td style="text-align: center;">
-                                            <div class="btn-group" style="display: inline-flex; gap: 0.25rem;">
-                                                <button onclick="viewFormDetail(<?php echo $formIndex; ?>)" 
-                                                        class="btn btn-sm btn-info" title="Detail" 
-                                                        style="padding: 0.375rem 0.625rem; font-size: 0.8125rem;">
-                                                    <i class="fas fa-info-circle"></i>
-                                                </button>
-                                                <button onclick="editForm(<?php echo $formIndex; ?>)" 
-                                                        class="btn btn-sm btn-warning" title="Edit" 
-                                                        style="padding: 0.375rem 0.625rem; font-size: 0.8125rem;">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button onclick="deleteForm(<?php echo $formIndex; ?>)" 
-                                                        class="btn btn-sm btn-danger" title="Hapus" 
-                                                        style="padding: 0.375rem 0.625rem; font-size: 0.8125rem;">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php 
-                                $formIndex++;
-                                endforeach; 
-                                ?>
-                            </tbody>
+                            <thead><tr><th style="width: 35%;">Judul</th><th style="width: 25%;">URL</th><th style="width: 12%;">Kategori</th><th style="width: 28%; text-align: center;">Aksi</th></tr></thead>
+                            <tbody></tbody>
                         </table>
                     </div>
-                <?php endif; ?>
+                </div>
             </div>
             
             <?php include __DIR__ . '/../../includes/footer.php'; ?>
@@ -629,7 +559,7 @@ if (isset($_SESSION[$cacheKey]) &&
     
     <script>
         // Store forms data for JavaScript access
-        let formsData = <?php echo json_encode($forms); ?>;
+        let formsData = [];
         const BASE_URL = <?php echo json_encode(BASE_URL); ?>;
         const FORMS_DATA_URL = BASE_URL + '/api/forms-data';
     </script>
@@ -684,7 +614,22 @@ if (isset($_SESSION[$cacheKey]) &&
 
         function renderFormsTable() {
             const tbody = document.querySelector('#forms-table tbody');
+            const tableEl = document.getElementById('forms-table');
+            const emptyState = document.getElementById('formsEmptyState');
+            const countEl = document.getElementById('formsCount');
             if (!tbody) return;
+
+            if (countEl) countEl.textContent = (formsData || []).length;
+
+            // Handle empty state
+            if (!formsData || formsData.length === 0) {
+                if (tableEl) tableEl.style.display = 'none';
+                if (emptyState) emptyState.style.display = '';
+                return;
+            } else {
+                if (tableEl) tableEl.style.display = '';
+                if (emptyState) emptyState.style.display = 'none';
+            }
 
             const rowsHtml = (formsData || []).map((form, index) => {
                 const title = escapeHtml(form.title);
@@ -734,14 +679,34 @@ if (isset($_SESSION[$cacheKey]) &&
         }
 
         async function reloadFormsTable() {
-            const category = getSelectedCategoryFromUrl();
-            const url = new URL(FORMS_DATA_URL, window.location.origin);
-            if (category) url.searchParams.set('category', category);
-            url.searchParams.set('ajax', '1');
+            const skeleton = document.getElementById('skeletonForms');
+            const wrapper = document.getElementById('formsTableWrapper');
+            const emptyState = document.getElementById('formsEmptyState');
+            const tableEl = document.getElementById('forms-table');
 
-            const data = await fetchJson(url.toString());
-            formsData = (data && data.data && data.data.forms) ? data.data.forms : [];
-            renderFormsTable();
+            try {
+                const category = getSelectedCategoryFromUrl();
+                const url = new URL(FORMS_DATA_URL, window.location.origin);
+                if (category) url.searchParams.set('category', category);
+                url.searchParams.set('ajax', '1');
+                url.searchParams.set('_t', Date.now());
+
+                const data = await fetchJson(url.toString());
+                formsData = (data && data.data && data.data.forms) ? data.data.forms : [];
+                renderFormsTable();
+            } catch (e) {
+                console.error('Failed to load forms:', e);
+                if (emptyState) {
+                    emptyState.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h3>Gagal Memuat Data</h3><p>Terjadi kesalahan saat memuat form. <a href="javascript:void(0)" onclick="reloadFormsTable()">Coba lagi</a></p>';
+                    emptyState.style.display = '';
+                }
+                if (tableEl) tableEl.style.display = 'none';
+                const countEl = document.getElementById('formsCount');
+                if (countEl) countEl.textContent = '!';
+            } finally {
+                if (skeleton) skeleton.style.display = 'none';
+                if (wrapper) wrapper.style.display = '';
+            }
         }
 
         function openAddFormModal() {
@@ -964,13 +929,16 @@ if (isset($_SESSION[$cacheKey]) &&
             }
         }
         
-        // Initialize Table Pagination
+        // Initialize Table Pagination and lazy load
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize pagination with 10 rows per page
             const formsPagination = initTablePagination('forms-table', {
                 rowsPerPage: 10,
                 rowsPerPageOptions: [10, 25, 50, 100]
             });
+
+            // Lazy load forms via AJAX (skeleton shown until data arrives)
+            reloadFormsTable();
         });
     </script>
 </body>
