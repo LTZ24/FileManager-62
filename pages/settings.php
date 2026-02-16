@@ -51,6 +51,7 @@ if ($isAdmin) {
         .settings-container {
             max-width: 900px;
             margin: 0 auto;
+            min-width: 0;
         }
         
         .settings-section {
@@ -59,6 +60,7 @@ if ($isAdmin) {
             padding: 2rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             margin-bottom: 2rem;
+            overflow: hidden;
         }
         
         .settings-section h2 {
@@ -139,12 +141,17 @@ if ($isAdmin) {
         /* Responsive */
         @media (max-width: 768px) {
             .settings-section {
-                padding: 1.5rem;
+                padding: 1rem;
             }
             
             .setting-item {
                 flex-direction: column;
                 align-items: flex-start;
+            }
+            
+            .setting-info {
+                min-width: 0;
+                width: 100%;
             }
             
             .setting-action {
@@ -156,6 +163,11 @@ if ($isAdmin) {
             .setting-action .btn,
             .setting-action form {
                 width: 100%;
+            }
+            
+            .user-table-wrap {
+                margin: 0 -1rem;
+                padding: 0 1rem;
             }
         }
 
@@ -542,13 +554,16 @@ if ($isAdmin) {
         .user-table-wrap {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            margin: 0 -0.5rem;
+            padding: 0 0.5rem;
         }
 
         .user-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.875rem;
-            min-width: 500px;
+            min-width: 480px;
+            white-space: nowrap;
         }
 
         .user-table th {

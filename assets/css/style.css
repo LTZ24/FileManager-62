@@ -815,6 +815,7 @@ body {
 .content-wrapper {
     padding: 30px;
     flex: 1;
+    overflow-x: hidden;
 }
 
 /* Dashboard */
