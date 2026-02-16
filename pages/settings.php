@@ -385,47 +385,106 @@ if ($isAdmin) {
             background: #fffbeb;
         }
 
-        /* Password confirmation section in modal */
-        .password-confirm-section {
-            padding: 1rem 1.5rem;
+        /* ===== Admin Password Confirmation Popup ===== */
+        .admin-pw-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10002;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+        .admin-pw-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .admin-pw-box {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 360px;
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: transform 0.2s ease;
+        }
+        .admin-pw-overlay.active .admin-pw-box {
+            transform: scale(1);
+        }
+        .admin-pw-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #fde68a;
             background: #fef3c7;
-            border-top: 1px solid #fde68a;
         }
-
-        .password-confirm-section label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
+        .admin-pw-header h4 {
+            margin: 0;
+            font-size: 0.95rem;
             color: #92400e;
-            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-
-        .password-confirm-section label i {
-            margin-right: 0.5rem;
+        .admin-pw-header h4 i {
+            color: #f59e0b;
         }
-
-        .password-confirm-section input {
+        .admin-pw-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: #92400e;
+            padding: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .admin-pw-close:hover {
+            background: rgba(0,0,0,0.05);
+        }
+        .admin-pw-body {
+            padding: 1.25rem;
+        }
+        .admin-pw-body p {
+            margin: 0 0 0.75rem;
+            font-size: 0.85rem;
+            color: #475569;
+            line-height: 1.5;
+        }
+        .admin-pw-body input {
             width: 100%;
             padding: 0.625rem 1rem;
             border: 2px solid #fde68a;
             border-radius: 8px;
             font-size: 0.875rem;
-            background: white;
+            background: #fffdf5;
             transition: border-color 0.2s;
         }
-
-        .password-confirm-section input:focus {
+        .admin-pw-body input:focus {
             outline: none;
             border-color: #f59e0b;
             box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+            background: white;
+        }
+        .admin-pw-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .admin-pw-actions .btn {
+            flex: 1;
         }
 
-        .password-confirm-section .hint {
-            font-size: 0.7rem;
-            color: #92400e;
-            margin-top: 0.375rem;
-        }
-        
         .storage-modal-footer {
             padding: 1rem 1.5rem;
             border-top: 1px solid #e2e8f0;
@@ -644,16 +703,12 @@ if ($isAdmin) {
             }
 
             .storage-modal-body {
-                max-height: 40vh;
+                max-height: 55vh;
                 overflow-y: auto;
             }
 
             .tab-panel {
                 padding: 1rem;
-            }
-
-            .password-confirm-section {
-                flex-shrink: 0;
             }
             
             .storage-modal-footer {
@@ -923,13 +978,6 @@ if ($isAdmin) {
                     </div>
                 </div>
 
-                <!-- Admin Password Confirmation -->
-                <div class="password-confirm-section">
-                    <label><i class="fas fa-lock"></i> Password Admin (wajib untuk menyimpan)</label>
-                    <input type="password" name="admin_password" id="storageAdminPassword" placeholder="Masukkan password akun admin Anda" required>
-                    <div class="hint">Diperlukan untuk mengonfirmasi perubahan pengaturan</div>
-                </div>
-
                 <div class="storage-modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeStorageModal()">Batal</button>
                     <button type="submit" class="btn btn-primary" id="btnSaveStorage"><i class="fas fa-save"></i> Simpan</button>
@@ -948,7 +996,7 @@ if ($isAdmin) {
                 </div>
             </div>
             <form id="createUserForm" onsubmit="saveNewUser(event)">
-                <div class="storage-modal-body" style="overflow-y: auto; max-height: 50vh;">
+                <div class="storage-modal-body">
                     <div style="padding: 1.5rem;">
                         <div class="storage-form-group">
                             <label><i class="fas fa-user"></i> Username</label>
@@ -972,13 +1020,6 @@ if ($isAdmin) {
                     </div>
                 </div>
 
-                <!-- Admin Password Confirmation -->
-                <div class="password-confirm-section">
-                    <label><i class="fas fa-lock"></i> Password Admin Anda (konfirmasi)</label>
-                    <input type="password" name="admin_password" id="createUserAdminPassword" placeholder="Masukkan password akun admin Anda" required>
-                    <div class="hint">Diperlukan untuk mengonfirmasi pembuatan akun</div>
-                </div>
-
                 <div class="storage-modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeCreateUserModal()">Batal</button>
                     <button type="submit" class="btn btn-primary" id="btnCreateUser"><i class="fas fa-user-plus"></i> Buat Akun</button>
@@ -998,7 +1039,7 @@ if ($isAdmin) {
             </div>
             <form id="editUserForm" onsubmit="saveEditUser(event)">
                 <input type="hidden" name="edit_user_id" id="editUserId">
-                <div class="storage-modal-body" style="overflow-y: auto; max-height: 50vh;">
+                <div class="storage-modal-body">
                     <div style="padding: 1.5rem;">
                         <div class="storage-form-group">
                             <label><i class="fas fa-user"></i> Username</label>
@@ -1024,13 +1065,6 @@ if ($isAdmin) {
                     </div>
                 </div>
 
-                <!-- Admin Password Confirmation -->
-                <div class="password-confirm-section">
-                    <label><i class="fas fa-lock"></i> Password Admin Anda (konfirmasi)</label>
-                    <input type="password" name="admin_password" id="editUserAdminPassword" placeholder="Masukkan password akun admin Anda" required>
-                    <div class="hint">Diperlukan untuk mengonfirmasi perubahan akun</div>
-                </div>
-
                 <div class="storage-modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeEditUserModal()">Batal</button>
                     <button type="submit" class="btn btn-primary" id="btnEditUser"><i class="fas fa-save"></i> Simpan</button>
@@ -1047,6 +1081,24 @@ if ($isAdmin) {
                 <button type="button" class="info-popup-close" onclick="closeInfoPopup()">&times;</button>
             </div>
             <div class="info-popup-body" id="infoPopupBody"></div>
+        </div>
+    </div>
+
+    <!-- Admin Password Confirmation Popup -->
+    <div class="admin-pw-overlay" id="adminPasswordPopup">
+        <div class="admin-pw-box">
+            <div class="admin-pw-header">
+                <h4><i class="fas fa-shield-alt"></i> Konfirmasi Admin</h4>
+                <button type="button" class="admin-pw-close" onclick="closeAdminPasswordPopup()">&times;</button>
+            </div>
+            <div class="admin-pw-body">
+                <p>Masukkan password admin Anda untuk mengonfirmasi perubahan.</p>
+                <input type="password" id="adminPasswordInput" placeholder="Password admin">
+                <div class="admin-pw-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeAdminPasswordPopup()">Batal</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmAdminPassword()" id="btnConfirmPassword"><i class="fas fa-check"></i> Konfirmasi</button>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -1134,23 +1186,17 @@ if ($isAdmin) {
         }
 
         // ===== Save All Storage Settings =====
-        async function saveAllStorageSettings(event) {
+        function saveAllStorageSettings(event) {
             event.preventDefault();
-
-            const adminPw = document.getElementById('storageAdminPassword').value;
-            if (!adminPw) {
-                showToast('Password admin wajib diisi.', 'error');
-                return;
-            }
-
-            const form = event.target;
-            const fd = new FormData(form);
+            const fd = new FormData(event.target);
             fd.append('csrf_token', window.APP_CSRF_TOKEN || '');
+            requestAdminPassword('storage', fd);
+        }
 
+        async function executeStorageSave(fd) {
             const btn = document.getElementById('btnSaveStorage');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-
             try {
                 const resp = await fetch(STORAGE_API_URL + '?action=update_all', {
                     method: 'POST',
@@ -1160,9 +1206,7 @@ if ($isAdmin) {
                     },
                     body: fd
                 });
-                
                 const data = await resp.json();
-                
                 if (data && data.success) {
                     closeStorageModal();
                     showToast(data.message || 'Pengaturan berhasil disimpan!', 'success');
@@ -1191,31 +1235,24 @@ if ($isAdmin) {
             document.body.style.overflow = '';
         }
 
-        async function saveNewUser(event) {
+        function saveNewUser(event) {
             event.preventDefault();
-
             const pw = document.getElementById('newPassword').value;
             const pwConfirm = document.getElementById('newPasswordConfirm').value;
             if (pw !== pwConfirm) {
                 showToast('Password akun baru tidak cocok.', 'error');
                 return;
             }
-
-            const adminPw = document.getElementById('createUserAdminPassword').value;
-            if (!adminPw) {
-                showToast('Password admin wajib diisi.', 'error');
-                return;
-            }
-
-            const form = event.target;
-            const fd = new FormData(form);
+            const fd = new FormData(event.target);
             fd.append('csrf_token', window.APP_CSRF_TOKEN || '');
             fd.append('action', 'create');
+            requestAdminPassword('createUser', fd);
+        }
 
+        async function executeCreateUser(fd) {
             const btn = document.getElementById('btnCreateUser');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membuat...';
-
             try {
                 const resp = await fetch(USERS_API_URL, {
                     method: 'POST',
@@ -1225,13 +1262,10 @@ if ($isAdmin) {
                     },
                     body: fd
                 });
-                
                 const data = await resp.json();
-                
                 if (data && data.success) {
                     closeCreateUserModal();
                     showToast(data.message || 'Akun berhasil dibuat!', 'success');
-                    // Refresh user list if it's visible
                     if (document.getElementById('userListTable').style.display !== 'none') {
                         userListLoaded = false;
                         loadUserList();
@@ -1274,24 +1308,18 @@ if ($isAdmin) {
             document.body.style.overflow = '';
         }
 
-        async function saveEditUser(event) {
+        function saveEditUser(event) {
             event.preventDefault();
-
-            const adminPw = document.getElementById('editUserAdminPassword').value;
-            if (!adminPw) {
-                showToast('Password admin wajib diisi.', 'error');
-                return;
-            }
-
-            const form = event.target;
-            const fd = new FormData(form);
+            const fd = new FormData(event.target);
             fd.append('csrf_token', window.APP_CSRF_TOKEN || '');
             fd.append('action', 'update');
+            requestAdminPassword('editUser', fd);
+        }
 
+        async function executeEditUser(fd) {
             const btn = document.getElementById('btnEditUser');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-
             try {
                 const resp = await fetch(USERS_API_URL, {
                     method: 'POST',
@@ -1301,9 +1329,7 @@ if ($isAdmin) {
                     },
                     body: fd
                 });
-                
                 const data = await resp.json();
-                
                 if (data && data.success) {
                     closeEditUserModal();
                     showToast(data.message || 'Akun berhasil diperbarui!', 'success');
@@ -1430,6 +1456,53 @@ if ($isAdmin) {
             return d.innerHTML;
         }
 
+        // ===== Admin Password Popup =====
+        let pendingAdminAction = null;
+
+        function requestAdminPassword(actionType, formData) {
+            pendingAdminAction = { type: actionType, formData: formData };
+            const input = document.getElementById('adminPasswordInput');
+            input.value = '';
+            input.style.borderColor = '#fde68a';
+            document.getElementById('adminPasswordPopup').classList.add('active');
+            setTimeout(() => input.focus(), 150);
+        }
+
+        function closeAdminPasswordPopup() {
+            document.getElementById('adminPasswordPopup').classList.remove('active');
+            pendingAdminAction = null;
+        }
+
+        function confirmAdminPassword() {
+            const input = document.getElementById('adminPasswordInput');
+            const pw = input.value.trim();
+            if (!pw) {
+                input.style.borderColor = '#ef4444';
+                input.focus();
+                return;
+            }
+            if (!pendingAdminAction) return;
+            const { type, formData } = pendingAdminAction;
+            formData.append('admin_password', pw);
+            pendingAdminAction = null;
+            document.getElementById('adminPasswordPopup').classList.remove('active');
+            if (type === 'storage') {
+                executeStorageSave(formData);
+            } else if (type === 'createUser') {
+                executeCreateUser(formData);
+            } else if (type === 'editUser') {
+                executeEditUser(formData);
+            }
+        }
+
+        // Enter key to confirm in password popup
+        document.getElementById('adminPasswordInput')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmAdminPassword();
+            }
+        });
+
         // ===== Info Popup =====
         function showInfoPopup(type) {
             const popup = document.getElementById('infoPopup');
@@ -1492,10 +1565,19 @@ if ($isAdmin) {
         document.getElementById('infoPopup')?.addEventListener('click', (e) => {
             if (e.target.id === 'infoPopup') closeInfoPopup();
         });
+
+        document.getElementById('adminPasswordPopup')?.addEventListener('click', (e) => {
+            if (e.target.id === 'adminPasswordPopup') closeAdminPasswordPopup();
+        });
         
         // Close on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
+                // Close admin password popup first if open
+                if (document.getElementById('adminPasswordPopup')?.classList.contains('active')) {
+                    closeAdminPasswordPopup();
+                    return;
+                }
                 document.querySelectorAll('.storage-modal-overlay.active').forEach(m => {
                     m.classList.remove('active');
                 });
