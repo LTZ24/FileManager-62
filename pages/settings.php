@@ -539,10 +539,16 @@ if ($isAdmin) {
         }
 
         /* User list table */
+        .user-table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .user-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.875rem;
+            min-width: 500px;
         }
 
         .user-table th {
@@ -718,6 +724,7 @@ if ($isAdmin) {
                     
                     <!-- User List Table (hidden by default) -->
                     <div id="userListTable" style="display: none; padding-top: 1rem;">
+                        <div class="user-table-wrap">
                         <table class="user-table">
                             <thead>
                                 <tr>
@@ -732,6 +739,7 @@ if ($isAdmin) {
                                 <tr><td colspan="5" style="padding: 1rem; text-align: center; color: #94a3b8;">Memuat...</td></tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
                 <?php endif; ?>

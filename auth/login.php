@@ -517,6 +517,10 @@ $csrfToken = generateSecureToken();
                         <i class="fas fa-sign-in-alt"></i> Masuk
                     </button>
                 </form>
+
+                <div style="margin-top: 1rem; text-align: center; font-size: 0.875rem; color: #5f6368;">
+                    Belum punya akun? <a href="<?php echo BASE_URL; ?>/auth/register" style="color: #1a73e8; text-decoration: none; font-weight: 500;">Daftar di sini</a>
+                </div>
             </div>
 
         </div>
