@@ -562,8 +562,12 @@ $csrfToken = generateSecureToken();
             window.history.pushState({ pwaLoginGuard: true }, document.title, window.location.href);
 
             window.addEventListener('popstate', function () {
-                // Re-push the guard state to keep the user on login page
-                window.history.pushState({ pwaLoginGuard: true }, document.title, window.location.href);
+                // Close / kill the PWA when back is pressed on login
+                try { window.close(); } catch (e) {}
+                // Fallback: navigate to blank page to kill the app state
+                setTimeout(function () {
+                    if (!window.closed) window.location.href = 'about:blank';
+                }, 100);
             });
         })();
     </script>
