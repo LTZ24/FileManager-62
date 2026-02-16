@@ -260,10 +260,19 @@ if ($isAdmin) {
             color: #334155;
         }
         
+        .storage-modal form {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            flex: 1;
+        }
+
         .storage-modal-body {
             padding: 0;
             overflow-y: auto;
             flex: 1;
+            min-height: 0;
         }
 
         /* Tabs */
@@ -703,7 +712,6 @@ if ($isAdmin) {
             }
 
             .storage-modal-body {
-                max-height: 55vh;
                 overflow-y: auto;
             }
 
