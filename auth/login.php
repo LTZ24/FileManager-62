@@ -551,23 +551,23 @@ $csrfToken = generateSecureToken();
             } catch (e) {}
         })();
 
-        // PWA Mobile: prevent app from closing on back button at login page
+        // PWA Standalone: close app on back button at login page
+        // Android closes PWA when history stack is exhausted.
+        // history.go(-N) past the beginning triggers native app close.
         (function () {
             var isStandalone = window.matchMedia('(display-mode: standalone)').matches
                             || window.navigator.standalone === true
                             || document.referrer.includes('android-app://');
             if (!isStandalone) return;
 
-            // Push a guard state so back button has something to pop
+            // Push a guard state so we intercept the first back press
             window.history.pushState({ pwaLoginGuard: true }, document.title, window.location.href);
 
             window.addEventListener('popstate', function () {
-                // Close / kill the PWA when back is pressed on login
-                try { window.close(); } catch (e) {}
-                // Fallback: navigate to blank page to kill the app state
-                setTimeout(function () {
-                    if (!window.closed) window.location.href = 'about:blank';
-                }, 100);
+                // Exhaust the entire history stack — Android will close the PWA
+                // when there are no more entries to go back to
+                var len = window.history.length || 1;
+                window.history.go(-len);
             });
         })();
     </script>
