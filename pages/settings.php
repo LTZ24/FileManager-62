@@ -1144,7 +1144,7 @@ if ($isAdmin) {
                 const el = document.getElementById(id);
                 if (!el) return;
                 if (hasValue) {
-                    el.textContent = 'Tersimpan \u2713';
+                    el.textContent = 'Tersimpan';
                     el.className = 'field-status configured';
                 } else {
                     el.textContent = 'Belum diisi';
@@ -1188,6 +1188,7 @@ if ($isAdmin) {
         // ===== Save All Storage Settings =====
         function saveAllStorageSettings(event) {
             event.preventDefault();
+            if (pendingAdminAction) return; // prevent double-click
             const fd = new FormData(event.target);
             fd.append('csrf_token', window.APP_CSRF_TOKEN || '');
             requestAdminPassword('storage', fd);
@@ -1237,6 +1238,7 @@ if ($isAdmin) {
 
         function saveNewUser(event) {
             event.preventDefault();
+            if (pendingAdminAction) return; // prevent double-click
             const pw = document.getElementById('newPassword').value;
             const pwConfirm = document.getElementById('newPasswordConfirm').value;
             if (pw !== pwConfirm) {
@@ -1310,6 +1312,7 @@ if ($isAdmin) {
 
         function saveEditUser(event) {
             event.preventDefault();
+            if (pendingAdminAction) return; // prevent double-click
             const fd = new FormData(event.target);
             fd.append('csrf_token', window.APP_CSRF_TOKEN || '');
             fd.append('action', 'update');
@@ -1380,7 +1383,7 @@ if ($isAdmin) {
                 if (data && data.success && data.data) {
                     const tbody = document.getElementById('userListBody');
                     if (data.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" style="padding: 1rem; text-align: center; color: #94a3b8;">Tidak ada pengguna.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; text-align: center; color: #94a3b8;">Tidak ada pengguna.</td></tr>';
                         return;
                     }
                     
@@ -1410,23 +1413,23 @@ if ($isAdmin) {
                 }
             } catch (e) {
                 console.error('Load users error:', e);
-                document.getElementById('userListBody').innerHTML = '<tr><td colspan="4" style="padding: 1rem; text-align: center; color: #ef4444;">Gagal memuat data pengguna.</td></tr>';
+                document.getElementById('userListBody').innerHTML = '<tr><td colspan="5" style="padding: 1rem; text-align: center; color: #ef4444;">Gagal memuat data pengguna.</td></tr>';
             }
         }
 
-        async function deleteUser(userId, username) {
+        function deleteUser(userId, username) {
             if (!confirm('Yakin ingin menghapus akun "' + username + '"? Tindakan ini tidak dapat dibatalkan.')) return;
+            if (pendingAdminAction) return;
 
-            const adminPw = prompt('Masukkan password admin Anda untuk konfirmasi:');
-            if (!adminPw) return;
+            const fd = new FormData();
+            fd.append('action', 'delete');
+            fd.append('delete_user_id', userId);
+            fd.append('csrf_token', window.APP_CSRF_TOKEN || '');
+            requestAdminPassword('deleteUser', fd);
+        }
 
+        async function executeDeleteUser(fd) {
             try {
-                const fd = new FormData();
-                fd.append('action', 'delete');
-                fd.append('delete_user_id', userId);
-                fd.append('admin_password', adminPw);
-                fd.append('csrf_token', window.APP_CSRF_TOKEN || '');
-
                 const resp = await fetch(USERS_API_URL, {
                     method: 'POST',
                     headers: {
@@ -1492,6 +1495,8 @@ if ($isAdmin) {
                 executeCreateUser(formData);
             } else if (type === 'editUser') {
                 executeEditUser(formData);
+            } else if (type === 'deleteUser') {
+                executeDeleteUser(formData);
             }
         }
 
@@ -1586,37 +1591,7 @@ if ($isAdmin) {
             }
         });
         
-        // Simple toast function (fallback)
-        function showToast(message, type = 'success') {
-            // Try to use the global showToast from main.js if available
-            if (window._mainShowToast) {
-                window._mainShowToast(message, type);
-                return;
-            }
-            
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                padding: 1rem 1.5rem;
-                background: ${type === 'success' ? '#10b981' : '#ef4444'};
-                color: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
-                max-width: 90vw;
-                font-size: 0.875rem;
-            `;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transition = 'opacity 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+        // showToast is provided by main.js (window.showToast)
     </script>
     <?php endif; ?>
     
