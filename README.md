@@ -1,297 +1,299 @@
-# File Manager v2
+# FileManager SMKN62 v3.0
 
-File Manager internal dengan integrasi Google Drive API (dan fitur manajemen data pendukung).
+Aplikasi manajemen file internal untuk SMK Negeri 62 Jakarta. Terintegrasi dengan Google Drive & Google Sheets untuk penyimpanan data berbasis cloud.
 
-## 📋 Fitur Utama
+> **Repository**: [github.com/LTZ24/FileManager-62](https://github.com/LTZ24/FileManager-62)
 
-- ✅ Manajemen Links (URL Shortener dengan QR Code)
-- ✅ Manajemen Forms (Google Forms Integration)
-- ✅ File Manager (Google Drive Integration)
-- ✅ Sistem Login & Autentikasi dengan Google OAuth 2.0
-- ✅ Dashboard dengan statistik real-time
-- ✅ Multi-bahasa (Indonesia & English) dengan i18n
-- ✅ Auto Logout setelah 30 menit inaktif
-- ✅ Responsive Design dengan sidebar collapsible
-- ✅ Dark Mode Support (Coming Soon)
+---
 
-## 🛠️ Teknologi
+## Fitur Utama
 
-- **Backend**: PHP 8.0+
-- **Database**: Google Sheets API (Cloud-based)
-- **Frontend**: HTML5, CSS3, JavaScript (Vanilla JS)
-- **API Integration**: 
-  - Google API Client PHP
-  - Google Sheets API v4
-  - Google Drive API v3
-  - Google OAuth 2.0
-  - Font Awesome 6.0 Icons
-- **Features**:
-  - i18n (Internationalization)
-  - Auto Logout System
-  - QR Code Generation
-  - AJAX Operations
+### Dashboard
+- Statistik real-time (jumlah file, link, form)
+- Data terbaru (recent uploads) dengan lazy loading AJAX
+- Akses cepat ke 4 kategori bidang sekolah
+- Skeleton UI saat loading
 
-## 📦 Instalasi
+### Manajemen Links
+- CRUD link penting per kategori bidang
+- Integrasi Google Sheets sebagai database
+- Filter berdasarkan kategori
+- Pagination (10 / 25 / 50 / 100 / All)
 
-### 1. Clone atau Download Project
+### Manajemen Forms
+- CRUD link Google Forms per kategori bidang
+- Integrasi Google Sheets sebagai database
+- Filter berdasarkan kategori
+- Pagination
+
+### File Manager
+- Upload file ke Google Drive (drag & drop / klik)
+- Upload manager dengan progress bar & antrian
+- Download & hapus file dari Google Drive
+- Preview file langsung di browser
+- Pagination daftar file
+
+### Kategori Bidang
+Setiap bidang memiliki halaman khusus dengan 3 tab (Links, Forms, Files):
+- **Kesiswaan**
+- **Kurikulum**
+- **Sapras & Humas**
+- **Tata Usaha**
+
+### Autentikasi & Keamanan
+- Login dengan username & password (MySQL + bcrypt)
+- Role-based access: `admin` dan `staff/guru`
+- Session management dengan auto-logout (30 menit inaktif)
+- Warning popup 2 menit sebelum logout
+- CSRF protection pada semua form
+- Rate limiting login (8 attempt / 60 detik)
+- HMAC token + admin password gate untuk setup page
+- Clean URL (tanpa ekstensi `.php`) via `.htaccess` rewrite
+
+### User Management (Admin)
+- Buat akun baru (staff/guru)
+- Edit email & password user
+- Aktifkan / nonaktifkan akun
+- Hapus akun (dengan konfirmasi password admin)
+
+### Google Drive Storage Setup
+- Halaman setup Google OAuth (`/pages/setup-google`)
+- Koneksi Google Drive untuk upload file
+- Service Account untuk baca data Sheets
+- Konfigurasi folder tujuan upload
+
+### Progressive Web App (PWA)
+- Installable di desktop & mobile
+- Offline fallback page
+- Service worker dengan cache strategy (network-first untuk halaman, cache-first untuk asset)
+- App manifest dengan ikon lengkap
+
+---
+
+## Tech Stack
+
+| Layer | Teknologi |
+|---|---|
+| **Backend** | PHP 8.2 |
+| **Database** | MySQL / MariaDB (autentikasi & konfigurasi) |
+| **Data Storage** | Google Sheets API v4 (links, forms) |
+| **File Storage** | Google Drive API v3 (upload, download, delete) |
+| **Auth** | Bcrypt + PHP Session (login), Google OAuth 2.0 (Drive setup) |
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript |
+| **Icons** | Font Awesome 6.0 |
+| **Server** | Apache 2.4 (XAMPP) dengan mod_rewrite |
+
+---
+
+## Struktur Folder
+
+```
+filemanager.smkn62.sch.id/
+├── api/                        # REST API endpoints (AJAX)
+│   ├── categories.php          # Data kategori
+│   ├── category-data.php       # Data per kategori
+│   ├── files-data.php          # Data file dari Drive
+│   ├── forms-data.php          # Data form dari Sheets
+│   ├── links-data.php          # Data link dari Sheets
+│   ├── recent.php              # Upload terbaru
+│   ├── stats.php               # Statistik dashboard
+│   ├── storage-settings.php    # Pengaturan storage
+│   ├── upload.php              # Upload handler
+│   └── users.php               # CRUD user (admin)
+├── assets/
+│   ├── css/
+│   │   ├── style.css           # Stylesheet utama
+│   │   └── ajax.css            # Loading & skeleton styles
+│   ├── images/
+│   │   └── icons/              # PWA icons (72–512px)
+│   └── js/
+│       ├── main.js             # JavaScript utama
+│       ├── ajax.js             # AJAX helper functions
+│       ├── upload-manager.js   # Upload queue & progress
+│       ├── table-pagination.js # Pagination universal
+│       ├── session-keepalive.js# Auto-logout & warning
+│       └── pwa.js              # PWA registration
+├── auth/
+│   ├── login.php               # Halaman login
+│   └── logout.php              # Proses logout
+├── data/
+│   ├── .htaccess               # Block akses langsung
+│   ├── credentials/            # Service account key (gitignored)
+│   ├── storage_config.json     # Konfigurasi storage (gitignored)
+│   └── storage_oauth.json      # OAuth token (gitignored)
+├── includes/
+│   ├── config.php              # Konfigurasi utama (gitignored)
+│   ├── db.php                  # Koneksi MySQL
+│   ├── google_client.php       # Google API client helper
+│   ├── ajax_helpers.php        # Helper fungsi AJAX
+│   ├── category_modals.php     # Modal CRUD kategori
+│   ├── header.php              # Header template
+│   ├── footer.php              # Footer template
+│   ├── sidebar.php             # Sidebar navigasi
+│   └── page-navigation.php     # Breadcrumb navigasi
+├── pages/
+│   ├── category/               # Halaman per bidang
+│   │   ├── kesiswaan.php
+│   │   ├── kurikulum.php
+│   │   ├── sapras-humas.php
+│   │   └── tata-usaha.php
+│   ├── files/                  # File manager
+│   │   ├── index.php           # Daftar file
+│   │   ├── upload.php          # Upload file
+│   │   └── delete.php          # Hapus file
+│   ├── forms/                  # Manajemen forms
+│   │   ├── index.php
+│   │   ├── add.php
+│   │   ├── edit.php
+│   │   └── delete.php
+│   ├── links/                  # Manajemen links
+│   │   ├── index.php
+│   │   ├── add.php
+│   │   ├── edit.php
+│   │   └── delete.php
+│   ├── settings.php            # Pengaturan & user management
+│   ├── profile.php             # Profil user
+│   ├── setup-google.php        # Setup Google OAuth
+│   ├── privacy.php             # Privacy policy
+│   └── terms.php               # Terms of service
+├── .htaccess                   # URL rewrite & security rules
+├── index.php                   # Dashboard
+├── error.php                   # Custom error page (400–500)
+├── sw.js                       # Service worker
+├── manifest.json               # PWA manifest
+├── offline.html                # Offline fallback
+├── composer.json               # PHP dependencies
+└── README.md
+```
+
+---
+
+## Instalasi
+
+### 1. Clone Repository
 
 ```bash
-# Sesuaikan URL repository dengan environment Anda
-git clone <repository-url>
-cd <folder-project>
+git clone https://github.com/LTZ24/FileManager-62.git
 ```
 
 ### 2. Install Dependencies
 
 ```bash
+cd FileManager-62
 composer install
 ```
 
-### 3. Konfigurasi Google API
+### 3. Buat Database MySQL
 
-1. Buat project di [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable Google Sheets API & Google Drive API
-3. Buat OAuth 2.0 credentials
-4. Download `credentials.json` dan simpan di folder `data/`
-5. Copy file `includes/config_ex.php` menjadi `includes/config.php`:
+Buat database dan tabel `users`:
 
-```bash
-cp includes/config_ex.php includes/config.php
+```sql
+CREATE DATABASE filemanager_smkn62;
+USE filemanager_smkn62;
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(100) DEFAULT NULL,
+    role ENUM('admin', 'staff/guru') DEFAULT 'staff/guru',
+    is_active TINYINT(1) DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Buat akun admin default (password: admin123)
+INSERT INTO users (username, password_hash, role)
+VALUES ('admin', '$2y$10$YOUR_BCRYPT_HASH_HERE', 'admin');
 ```
 
-6. Edit `includes/config.php` dan isi kredensial Google API:
+> Ganti `$2y$10$YOUR_BCRYPT_HASH_HERE` dengan hasil `password_hash('admin123', PASSWORD_DEFAULT)`.
+
+### 4. Buat tabel `system_config`
+
+```sql
+CREATE TABLE system_config (
+    config_key VARCHAR(100) PRIMARY KEY,
+    config_value TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+### 5. Konfigurasi Aplikasi
+
+Buat file `includes/config.php` berdasarkan template — isi konfigurasi database MySQL:
 
 ```php
-// Google API Configuration
-define('GOOGLE_CLIENT_ID', 'YOUR_CLIENT_ID_HERE');
-define('GOOGLE_CLIENT_SECRET', 'YOUR_CLIENT_SECRET_HERE');
-define('GOOGLE_REDIRECT_URI', 'http://localhost/Data-Base-Guru-v2/auth/google-callback.php');
-
-// Google Sheets ID
-define('LINKS_SPREADSHEET_ID', 'YOUR_LINKS_SHEET_ID');
-define('FORMS_SPREADSHEET_ID', 'YOUR_FORMS_SHEET_ID');
+// Database
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'filemanager_smkn62');
+define('DB_USER', 'root');
+define('DB_PASS', '');
 ```
 
-### 4. Set Permission Folder
+### 6. Konfigurasi Google API
 
-Pastikan folder `data/` memiliki permission write:
+1. Buat project di [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable **Google Sheets API** dan **Google Drive API**
+3. Buat **Service Account** → download JSON key → simpan di `data/credentials/`
+4. Buat **OAuth 2.0 Client ID** (untuk fitur upload ke Drive)
+5. Buka halaman Settings di aplikasi → Setup Google OAuth
 
-**Linux/Mac:**
-```bash
-chmod -R 755 data/
+### 7. Konfigurasi Storage
+
+Buat file `data/storage_config.json`:
+
+```json
+{
+    "service_account_path": "credentials/service-account.json",
+    "spreadsheet_id": "YOUR_GOOGLE_SHEETS_ID",
+    "drive_folder_id": "YOUR_GOOGLE_DRIVE_FOLDER_ID"
+}
 ```
-
-**Windows:**
-- Klik kanan folder `data/` → Properties → Security → Edit → Berikan Full Control
-
-## 🚀 Menjalankan Aplikasi
-
-1. Jalankan XAMPP/WAMP atau PHP Built-in Server:
-
-**XAMPP/WAMP:**
-```
-http://localhost/Data-Base-Guru-v2
-```
-
-**PHP Built-in Server:**
-```bash
-php -S localhost:8000
-```
-Akses: `http://localhost:8000`
-
-2. Login dengan Google Account Anda
-3. Berikan izin akses ke Google Sheets & Drive
-4. Selesai! Dashboard akan muncul
-
-## 🌐 Fitur Multi-Bahasa (i18n)
-
-Aplikasi mendukung 2 bahasa:
-- 🇮🇩 Bahasa Indonesia (Default)
-- 🇬🇧 English
-
-**Cara Mengganti Bahasa:**
-1. Klik menu **Settings** di sidebar
-2. Pilih bahasa dari dropdown "Bahasa / Language"
-3. Halaman akan reload otomatis dengan bahasa yang dipilih
-4. Preferensi bahasa tersimpan di localStorage + cookies
-
-## 📁 Struktur Folder
-
-```
-Data-Base-Guru-v2/
-├── assets/
-│   ├── css/
-│   │   └── style.css        # Main stylesheet
-│   ├── js/
-│   │   ├── ajax.js          # AJAX operations
-│   │   ├── i18n.js          # Internationalization
-│   │   └── main.js          # Main JavaScript
-│   └── images/              # Gambar/Icon
-├── auth/
-│   ├── login.php            # Halaman login
-│   ├── logout.php           # Proses logout
-│   └── google-callback.php  # OAuth callback
-├── data/
-│   ├── credentials.json     # Google API credentials (gitignored)
-│   └── token.json           # Google API token (gitignored)
-├── includes/
-│   ├── config_ex.php        # Template konfigurasi
-│   ├── config.php           # Konfigurasi (gitignored)
-│   ├── i18n.php             # i18n engine
-│   ├── lang/
-│   │   ├── id.php           # Indonesian translations
-│   │   └── en.php           # English translations
-│   ├── header.php           # Header template
-│   ├── footer.php           # Footer template
-│   ├── sidebar.php          # Sidebar navigation
-│   └── api.php              # API endpoints
-├── pages/
-│   ├── links/               # Halaman Links Management
-│   │   ├── index.php        # List links
-│   │   ├── add.php          # Tambah link
-│   │   └── edit.php         # Edit link
-│   ├── forms/               # Halaman Forms Management
-│   │   ├── index.php        # List forms
-│   │   ├── add.php          # Tambah form
-│   │   └── edit.php         # Edit form
-│   ├── files/               # File Manager
-│   │   └── upload.php       # Upload file
-│   ├── settings.php         # Pengaturan
-│   └── profile.php          # Profil user
-├── vendor/                  # Composer dependencies (gitignored)
-├── .gitignore               # Git ignore rules
-├── composer.json            # Composer config
-├── composer.lock            # Composer lock file
-├── index.php                # Dashboard
-└── README.md                # Dokumentasi
-```
-
-## 📚 Dokumentasi Penggunaan
-
-### Mengelola Links
-
-1. Login ke sistem
-2. Pilih menu **"Kelola Links"** / **"Manage Links"** di sidebar
-3. Klik **"Tambah Link Baru"** / **"Add New Link"**
-4. Isi form (Nama, URL, Kategori)
-5. Klik **"Simpan"** / **"Save"**
-6. Link akan tersimpan di Google Sheets dan mendapatkan QR Code otomatis
-
-### Mengelola Forms
-
-1. Pilih menu **"Kelola Forms"** / **"Manage Forms"** di sidebar
-2. Klik **"Tambah Form Baru"** / **"Add New Form"**
-3. Isi form (Nama Form, Google Form URL, Kategori)
-4. Klik **"Simpan"** / **"Save"**
-5. Form akan tersimpan di Google Sheets
-
-### Upload File ke Google Drive
-
-1. Pilih menu **"Upload File"** di sidebar
-2. Klik area upload atau drag & drop file
-3. Pilih kategori file
-4. Klik **"Upload"**
-5. File akan tersimpan di Google Drive
-
-### Mengganti Bahasa
-
-1. Pilih menu **"Settings"** / **"Pengaturan"**
-2. Di section "Preferensi" / "Preferences", pilih bahasa dari dropdown
-3. Halaman akan reload dengan bahasa yang dipilih
-
-## 🔒 Keamanan
-
-- Google OAuth 2.0 untuk autentikasi
-- Session management dengan auto-logout (30 menit inaktif)
-- Token refresh otomatis
-- Credentials dan token di-gitignore
-- Input validation & sanitization
-- AJAX CSRF protection
-- Secure file upload handling
-
-## ⚙️ Auto Logout System
-
-Aplikasi memiliki fitur auto-logout otomatis untuk keamanan:
-- **Timeout**: 30 menit (1800 detik) tanpa aktivitas
-- **Warning**: Muncul 2 menit sebelum logout
-- **Reset**: Timer reset otomatis saat ada aktivitas (click, keypress, scroll)
-- **Countdown**: Menampilkan countdown di warning modal
-
-## 🐛 Troubleshooting
-
-### Error: "Invalid credentials"
-- Pastikan file `includes/config.php` sudah dibuat dari `config_ex.php`
-- Cek GOOGLE_CLIENT_ID dan GOOGLE_CLIENT_SECRET sudah benar
-- Pastikan `data/credentials.json` sudah ada
-
-### Error: "Permission denied" / "Access denied"
-- Berikan write permission pada folder `data/`
-- Pastikan Google Sheets ID sudah benar
-- Cek permission sharing Google Sheets (minimal "Editor")
-
-### Error: "Token expired"
-- Hapus file `data/token.json`
-- Login ulang untuk generate token baru
-
-### Bahasa tidak berubah
-- Clear browser cache dan cookies
-- Pastikan JavaScript tidak di-block
-- Cek browser console untuk error
-
-### Google API Error
-- Pastikan Google Sheets API & Drive API sudah di-enable
-- Cek quota limit di Google Cloud Console
-- Pastikan redirect URI sudah benar
-
-## 📝 Changelog
-
-### Version 2.1 (2025-10-25)
-- ✅ Implementasi sistem i18n (Multi-bahasa: Indonesia & English)
-- ✅ Tambah language switcher di Settings
-- ✅ Refactor dari dark mode ke i18n system
-- ✅ Cleanup kode dan dokumentasi
-- ✅ Tambah .gitignore untuk keamanan credentials
-- ✅ Buat config_ex.php sebagai template
-
-### Version 2.0 (2025-10-23)
-- ✅ Rebuild dengan struktur yang lebih baik
-- ✅ Integrasi Google Sheets API untuk data storage
-- ✅ Integrasi Google Drive API untuk file management
-- ✅ Implementasi auto-logout system (30 menit)
-- ✅ Modern UI dengan sidebar collapsible
-- ✅ AJAX operations untuk UX lebih baik
-- ✅ QR Code generation untuk links
-- ✅ Responsive design untuk semua devices
-
-### Version 1.0 (Previous)
-- Basic CRUD operations
-- Simple authentication
-
-## 👥 Kontributor
-
-- Developer: LTZ24
-- GitHub: [@LTZ24](https://github.com/LTZ24)
-- Repository: [DATA-MANAGEMENT_v2](https://github.com/LTZ24/DATA-MANAGEMENT_v2)
-
-## 📄 Lisensi
-
-MIT License - Copyright © 2025 LTZ24
-
-## 📞 Support
-
-Untuk bantuan atau pertanyaan:
-- GitHub Issues: [Create Issue](https://github.com/LTZ24/DATA-MANAGEMENT_v2/issues)
-- Email: [Contact via GitHub](https://github.com/LTZ24)
-
-## 🙏 Acknowledgments
-
-- Google Cloud Platform untuk API services
-- Font Awesome untuk icons
-- Composer untuk dependency management
-- PHP Google API Client Library
 
 ---
 
-**Dibuat dengan ❤️ oleh LTZ24**
+## Menjalankan Aplikasi
 
-⭐ Jika project ini membantu, berikan star di GitHub!
+### XAMPP (Windows)
+
+1. Simpan folder project di `C:\xampp\htdocs\`
+2. Jalankan Apache dan MySQL dari XAMPP Control Panel
+3. Akses: `http://localhost/FileManager-62`
+
+### Login
+
+- Username: `admin`
+- Password: (sesuai yang dibuat saat instalasi)
+
+---
+
+## Keamanan
+
+| Fitur | Detail |
+|---|---|
+| Password hashing | bcrypt (`PASSWORD_DEFAULT`) |
+| Session | Auto-logout 30 menit, session regeneration on login |
+| CSRF | Token pada semua form POST |
+| Rate limiting | 8 login attempts per 60 detik |
+| Clean URL | `.htaccess` rewrite, `.php` dihapus dari URL |
+| Data protection | `data/` di-block via `.htaccess` (no PHP execution) |
+| Credentials | Service account key & OAuth token di-gitignore |
+| Setup page | HMAC token + admin password gate (TTL 10 menit) |
+
+---
+
+## Screenshot
+
+> _Tambahkan screenshot dashboard, file manager, dan settings di sini._
+
+---
+
+## Kontributor
+
+- **Developer**: LTZ24
+- **GitHub**: [@LTZ24](https://github.com/LTZ24)
+
+## Lisensi
+
+MIT License — Copyright © 2025-2026 LTZ24
