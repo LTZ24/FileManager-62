@@ -95,42 +95,6 @@ class UploadManager {
         // Upload section is now static in header.php, just get reference to the list element
         this.notificationDropdown = document.getElementById('uploadDropdownList');
     }
-
-    ensureWorker() {
-        try {
-            // Open or reuse a named window
-            const url = (this.baseUrl || '') + '/pages/files/upload-worker.html';
-            const name = 'fm_upload_worker';
-            const features = 'width=600,height=400,left=100,top=100,menubar=no,location=no,toolbar=no,status=no';
-            let win = window.open('', name);
-            if (!win || win.closed) {
-                win = window.open(url, name, features);
-            } else {
-                // If window exists, navigate it to worker URL if needed
-                try {
-                    if (win.location && win.location.pathname !== new URL(url, window.location.origin).pathname) {
-                        win.location.href = url;
-                    }
-                } catch (e) {
-                    // ignore cross-access errors
-                }
-            }
-            return win;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    sendToWorker(files, category) {
-        const worker = this.ensureWorker();
-        if (!worker) return false;
-
-        try {
-            worker.postMessage({ type: 'addFiles', files: files, category: category }, '*');
-            return true;
-        } catch (e) {
-            return false;
-        }
     }
 
     mergeRemoteState(items) {
@@ -1021,20 +985,8 @@ class UploadManager {
         const item = this.uploadQueue[index];
         
         // If uploading, abort the XHR request
-        if (item._workerControlled) {
-            // Tell worker to abort this item if worker is managing it
-            try {
-                const win = this.ensureWorker();
-                if (win && !win.closed) {
-                    win.postMessage({ type: 'abort', id: itemId }, '*');
-                }
-            } catch (e) {}
-            item.status = 'cancelled';
-            if (typeof window.showToast === 'function') {
-                window.showToast('Upload dibatalkan', 'error');
-            }
-        } else if (item.status === 'uploading' && item.xhr) {
-            item.xhr.abort();
+        if (item.status === 'uploading' && item.xhr) {
+            try { item.xhr.abort(); } catch (e) {}
             item.status = 'cancelled';
             if (typeof window.showToast === 'function') {
                 window.showToast('Upload dibatalkan', 'error');
@@ -1125,42 +1077,11 @@ class UploadManager {
 
         if (filesWithIds.length === 0) return;
 
-        const dispatchedToWorker = this.sendToWorker(filesWithIds, category);
-        if (dispatchedToWorker) {
-            // Create lightweight UI placeholders
-            for (const f of filesWithIds) {
-                const uploadItem = {
-                    id: f.id,
-                    file: f.file,
-                    category: category,
-                    status: 'pending',
-                    progress: 0,
-                    error: null,
-                    _workerControlled: true
-                };
-
-                this.uploadQueue.push(uploadItem);
-                this.renderUploadItem(uploadItem);
-            }
-
-            this.show();
-            this.updateSummary();
-            this.updateBadge();
-            setTimeout(() => this.minimizeToDropdown(), 500);
-            // Worker updates state via storage
-            return;
-        }
-
-        // Local upload fallback
-        for (const file of fileArray) {
-            if (file.size > this.maxFileSize) {
-                this.showToast(`File "${file.name}" melebihi batas 100MB`, 'error');
-                continue;
-            }
-
+        // Always handle uploads in-page (no worker window)
+        for (const f of filesWithIds) {
             const uploadItem = {
-                id: this.generateId(),
-                file: file,
+                id: f.id,
+                file: f.file,
                 category: category,
                 status: 'pending',
                 progress: 0,
@@ -1170,7 +1091,7 @@ class UploadManager {
             this.uploadQueue.push(uploadItem);
             this.renderUploadItem(uploadItem);
         }
-        
+
         // Show then minimize to dropdown and start processing
         this.show();
         this.updateSummary();
