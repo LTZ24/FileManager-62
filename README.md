@@ -239,6 +239,12 @@ define('DB_PASS', '');
 4. Buat **OAuth 2.0 Client ID** (untuk fitur upload ke Drive)
 5. Buka halaman Settings di aplikasi → Setup Google OAuth
 
+## Deployment notes
+
+- Ensure `data/credentials` and `data/storage_oauth.json` are not committed to the repository.
+- Set correct file permissions for `data/` and `includes/config.php` on production.
+
+
 ### 7. Konfigurasi Storage
 
 Buat file `data/storage_config.json`:
