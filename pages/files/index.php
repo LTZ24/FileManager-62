@@ -843,7 +843,7 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                 const iconLink = escapeHtml(file.iconLink || '');
                 const webViewLink = escapeHtml(file.webViewLink || '#');
                 const categoryColor = escapeHtml(file.categoryColor || '#64748b');
-                const categoryIcon = escapeHtml(file.categoryIcon || 'fa-folder');
+                const categoryIcon = escapeHtml(file.categoryIcon || 'fa-folder'); // already contains fa- prefix
                 const categoryName = escapeHtml(file.categoryName || '-');
 
                 const modifiedTs = file.modifiedTimestamp || 0;
@@ -864,7 +864,7 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                                 <div class="file-details">
                                     <span class="file-name">${name}</span>
                                     <span class="file-meta">${escapeHtml(file.sizeFormatted || '0 Bytes')} • ${escapeHtml(file.modifiedFormatted || '-')}
-                                        <span class="file-meta-category hide-desktop">• <i class="fas fa-${categoryIcon}" style="color:${categoryColor};font-size:0.75rem;"></i></span>
+                                        <span class="file-meta-category hide-desktop">• <i class="fas ${categoryIcon}" style="color:${categoryColor};font-size:0.75rem;"></i></span>
                                     </span>
                                 </div>
                             </div>
