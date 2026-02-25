@@ -864,7 +864,7 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                                 <div class="file-details">
                                     <span class="file-name">${name}</span>
                                     <span class="file-meta">${escapeHtml(file.sizeFormatted || '0 Bytes')} • ${escapeHtml(file.modifiedFormatted || '-')}
-                                        <span class="file-meta-category hide-desktop">• ${categoryName}</span>
+                                        <span class="file-meta-category hide-desktop">• <i class="fas fa-${categoryIcon}" style="color:${categoryColor};font-size:0.75rem;"></i></span>
                                     </span>
                                 </div>
                             </div>

@@ -2010,6 +2010,9 @@ table tbody tr:hover {
             font-size: 0.65rem;
             color: #64748b;
         }
+        .file-meta-category i {
+            vertical-align: middle;
+        }
     }
 
     /* File info layout: name on top, size & date below */
