@@ -248,33 +248,7 @@ class TablePagination {
         this.currentPage = 1;
         this.render();
     }
-    
-    checkEmptyState() {
-        // Find or create empty state element
-        let emptyState = this.table.parentElement.querySelector('.empty-state');
-        
-        if (this.filteredRows.length === 0) {
-            if (!emptyState) {
-                emptyState = document.createElement('div');
-                emptyState.className = 'empty-state';
-                emptyState.innerHTML = `
-                    <i class="fas fa-inbox"></i>
-                    <p>Tidak ada data yang ditemukan</p>
-                `;
-                this.table.parentElement.appendChild(emptyState);
-            }
-            emptyState.style.display = 'block';
-            this.table.style.display = 'none';
-            this.paginationContainer.style.display = 'none';
-        } else {
-            if (emptyState) {
-                emptyState.style.display = 'none';
-            }
-            this.table.style.display = '';
-            this.paginationContainer.style.display = '';
-        }
-    }
-}
+} 
 
 // Global storage for pagination instances
 window.tablePaginationInstances = window.tablePaginationInstances || {};
