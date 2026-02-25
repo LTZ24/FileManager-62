@@ -38,6 +38,12 @@ class UploadManager {
         }
         this.createNotificationDropdown();
         if (!this.uiOnly) this.startKeepalive();
+        // If this instance is UI-only (no upload worker), purge any orphaned
+        // upload state left behind by a previously-opened worker so deleted
+        // history does not reappear.
+        if (this.uiOnly) {
+            this.purgeOrphanedState();
+        }
         this.restoreStateFromStorage();
         window.addEventListener('storage', (e) => {
             if (e.key === 'uploadManager:state' && e.newValue) {
@@ -128,6 +134,7 @@ class UploadManager {
             this.updateSummary();
             this.updateBadge();
             this.syncToDropdown();
+            try { this.saveStateToStorage(); } catch (e) {}
         }
     }
 
@@ -138,6 +145,52 @@ class UploadManager {
             const payload = JSON.parse(raw);
             if (payload && Array.isArray(payload.items)) {
                 this.mergeRemoteState(payload.items);
+            }
+        } catch (e) {}
+    }
+
+    saveStateToStorage() {
+        try {
+            const items = this.uploadQueue.map(i => ({
+                id: i.id,
+                name: (i.file && i.file.name) || (i.name || ''),
+                size: (i.file && i.file.size) || (i.size || 0),
+                category: i.category || '',
+                status: i.status || 'pending',
+                progress: i.progress || 0,
+                error: i.error || null,
+                ts: Date.now()
+            }));
+            localStorage.setItem('uploadManager:state', JSON.stringify({ items }));
+        } catch (e) {}
+    }
+
+    purgeOrphanedState() {
+        // Remove stale upload state left by a worker or other tab when this
+        // instance is UI-only. We keep only very recent 'uploading' entries
+        // (10 minutes) to avoid resurrecting old history that the user
+        // explicitly removed.
+        try {
+            const raw = localStorage.getItem('uploadManager:state');
+            if (!raw) return;
+            const payload = JSON.parse(raw);
+            if (!payload || !Array.isArray(payload.items)) {
+                localStorage.removeItem('uploadManager:state');
+                return;
+            }
+            const now = Date.now();
+            const KEEP_WINDOW = 10 * 60 * 1000; // 10 minutes
+            const keep = payload.items.filter(it => {
+                if (!it || typeof it !== 'object') return false;
+                if (it.status !== 'uploading') return false;
+                if (!it.ts) return false;
+                return (now - it.ts) < KEEP_WINDOW;
+            });
+
+            if (keep.length === 0) {
+                localStorage.removeItem('uploadManager:state');
+            } else {
+                localStorage.setItem('uploadManager:state', JSON.stringify({ items: keep }));
             }
         } catch (e) {}
     }
@@ -1003,6 +1056,7 @@ class UploadManager {
         this.updateSummary();
         this.updateBadge();
         this.syncToDropdown();
+        try { this.saveStateToStorage(); } catch (e) {}
     }
     
     // Clear all completed/error items
@@ -1019,6 +1073,7 @@ class UploadManager {
         this.updateSummary();
         this.updateBadge();
         this.syncToDropdown();
+        try { this.saveStateToStorage(); } catch (e) {}
     }
     
     clearQueue() {
@@ -1027,6 +1082,7 @@ class UploadManager {
         this.updateSummary();
         this.updateBadge();
         this.syncToDropdown();
+        try { this.saveStateToStorage(); } catch (e) {}
     }
     
     startKeepalive() {
@@ -1090,6 +1146,9 @@ class UploadManager {
             this.uploadQueue.push(uploadItem);
             this.renderUploadItem(uploadItem);
         }
+
+        // Persist new queue state so items aren't resurrected from stale storage
+        try { this.saveStateToStorage(); } catch (e) {}
 
         // Show then minimize to dropdown and start processing
         this.show();
@@ -1192,6 +1251,7 @@ class UploadManager {
         
         this.isUploading = false;
         this.onComplete(this.uploadQueue);
+        try { this.saveStateToStorage(); } catch (e) {}
         this.updateSummary();
         this.updateBadge();
         this.syncToDropdown();
@@ -1229,6 +1289,7 @@ class UploadManager {
                         item.progress = Math.round((e.loaded / e.total) * 100);
                         this.updateUploadItem(item);
                         this.onProgress(item);
+                        try { this.saveStateToStorage(); } catch (e) {}
                     }
                 });
                 
@@ -1290,6 +1351,7 @@ class UploadManager {
         }
         
         this.updateUploadItem(item);
+        try { this.saveStateToStorage(); } catch (e) {}
         this.updateSummary();
     }
     
