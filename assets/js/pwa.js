@@ -44,6 +44,14 @@ class PWAManager {
             });
             
             console.log('[PWA] Service worker registered:', this.swRegistration.scope);
+
+            // Immediately check for updates after registration so clients get latest SW & assets
+            try {
+                await this.swRegistration.update();
+                console.log('[PWA] Service worker update checked');
+            } catch (err) {
+                console.warn('[PWA] SW update check failed:', err);
+            }
             
             this.swRegistration.addEventListener('updatefound', () => {
                 console.log('[PWA] New service worker available');

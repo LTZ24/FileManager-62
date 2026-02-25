@@ -1,5 +1,6 @@
 // Bump this when deploying asset changes to avoid stale caches.
-const CACHE_VERSION = 'v3.0.2';
+// Updated to force clients to install the newest service worker when assets change.
+const CACHE_VERSION = 'v3.0.3';
 const CACHE_NAME = `filemanager-62-${CACHE_VERSION}`;
 
 // Auto-detect base path from SW location.
