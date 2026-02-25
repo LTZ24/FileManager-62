@@ -689,7 +689,7 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                                                 <img src="<?php echo $file['iconLink']; ?>" alt="" class="file-icon">
                                                 <div class="file-details">
                                                     <span class="file-name"><?php echo htmlspecialchars($file['name']); ?></span>
-                                                    <span class="file-meta"><?php echo formatFileSize($file['size']); ?> • <?php echo htmlspecialchars($file['categoryName']); ?> • <?php echo formatDateTime($file['modifiedTime']); ?></span>
+                                                    <span class="file-meta"><?php echo formatFileSize($file['size']); ?> • <span class="category-inline-badge" style="background: <?php echo $file['categoryColor']; ?>; color: #fff;"><?php echo htmlspecialchars($file['categoryName']); ?></span> • <?php echo formatDateTime($file['modifiedTime']); ?></span>
                                                 </div>
                                             </div>
                                         </td>
@@ -863,7 +863,7 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                                 <img src="${iconLink}" alt="" class="file-icon">
                                 <div class="file-details">
                                     <span class="file-name">${name}</span>
-                                    <span class="file-meta">${escapeHtml(file.sizeFormatted || '0 Bytes')} • ${escapeHtml(file.categoryName || '-') } • ${escapeHtml(file.modifiedFormatted || '-')}</span>
+                                    <span class="file-meta">${escapeHtml(file.sizeFormatted || '0 Bytes')} • <span class="category-inline-badge" style="background: ${categoryColor}; color: #fff;">${escapeHtml(file.categoryName || '-')}</span> • ${escapeHtml(file.modifiedFormatted || '-')}</span>
                                 </div>
                             </div>
                         </td>

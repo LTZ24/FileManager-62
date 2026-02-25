@@ -2025,6 +2025,18 @@ table tbody tr:hover {
         color: #64748b;
     }
 
+    /* Inline category badge used in mobile file-meta */
+    .category-inline-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 0.65rem;
+        line-height: 1;
+        vertical-align: middle;
+        color: #fff;
+        font-weight: 600;
+    }
+
     /* Compact action buttons */
     .btn-group {
         gap: 0.15rem !important;
