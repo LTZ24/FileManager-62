@@ -562,6 +562,11 @@ $categories = getFormCategories();
         let formsData = [];
         const BASE_URL = <?php echo json_encode(BASE_URL); ?>;
         const FORMS_DATA_URL = BASE_URL + '/api/forms-data';
+
+        // Server-side paging (only supported when a single category is requested)
+        let formsPerPage = 15;
+        let formsPage = 1;
+        let formsHasMore = false;
     </script>
     
     <script src="<?php echo BASE_URL; ?>/assets/js/table-pagination.js"></script>
@@ -678,7 +683,7 @@ $categories = getFormCategories();
             }
         }
 
-        async function reloadFormsTable() {
+        async function reloadFormsTable(page = 1) {
             const skeleton = document.getElementById('skeletonForms');
             const wrapper = document.getElementById('formsTableWrapper');
             const emptyState = document.getElementById('formsEmptyState');
@@ -687,17 +692,32 @@ $categories = getFormCategories();
             try {
                 const category = getSelectedCategoryFromUrl();
                 const url = new URL(FORMS_DATA_URL, window.location.origin);
-                if (category) url.searchParams.set('category', category);
+                if (category) {
+                    url.searchParams.set('category', category);
+                    url.searchParams.set('page', page);
+                    url.searchParams.set('per_page', formsPerPage);
+                }
                 url.searchParams.set('ajax', '1');
                 url.searchParams.set('_t', Date.now());
 
                 const data = await fetchJson(url.toString());
                 formsData = (data && data.data && data.data.forms) ? data.data.forms : [];
+
+                if (category) {
+                    formsPage = page;
+                    formsHasMore = !!(data && data.data && data.data.has_more);
+                } else {
+                    formsPage = 1;
+                    formsHasMore = false;
+                }
+
                 renderFormsTable();
+
+                if (category) renderFormsPaginationControls();
             } catch (e) {
                 console.error('Failed to load forms:', e);
                 if (emptyState) {
-                    emptyState.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h3>Gagal Memuat Data</h3><p>Terjadi kesalahan saat memuat form. <a href="javascript:void(0)" onclick="reloadFormsTable()">Coba lagi</a></p>';
+                    emptyState.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h3>Gagal Memuat Data</h3><p>Terjadi kesalahan saat memuat form. <a href="javascript:void(0)" onclick="reloadFormsTable(1)">Coba lagi</a></p>';
                     emptyState.style.display = '';
                 }
                 if (tableEl) tableEl.style.display = 'none';
@@ -929,16 +949,74 @@ $categories = getFormCategories();
             }
         }
         
-        // Initialize Table Pagination and lazy load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize pagination with 10 rows per page
-            const formsPagination = initTablePagination('forms-table', {
-                rowsPerPage: 10,
-                rowsPerPageOptions: [10, 25, 50, 100]
-            });
+        function renderFormsPaginationControls() {
+            let container = document.getElementById('formsServerPagination');
+            const category = getSelectedCategoryFromUrl();
+            if (!category) {
+                if (container) container.style.display = 'none';
+                return;
+            }
 
-            // Lazy load forms via AJAX (skeleton shown until data arrives)
-            reloadFormsTable();
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'formsServerPagination';
+                container.style.display = 'flex';
+                container.style.justifyContent = 'space-between';
+                container.style.alignItems = 'center';
+                container.style.marginTop = '0.75rem';
+                const tableWrapper = document.getElementById('forms-table').closest('.forms-table');
+                if (tableWrapper) tableWrapper.appendChild(container);
+                else document.getElementById('formsTableWrapper').appendChild(container);
+            }
+
+            const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+            const prevLabel = isMobile ? '&lt;' : 'Prev';
+            const nextLabel = isMobile ? '&gt;' : 'Next';
+            const pageText = isMobile ? `Hal ${formsPage}` : `Halaman ${formsPage}`;
+
+            container.innerHTML = `
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button id="formsPrevBtn" class="btn btn-secondary" ${formsPage === 1 ? 'disabled' : ''}>${prevLabel}</button>
+                    <button id="formsNextBtn" class="btn btn-secondary" ${formsHasMore ? '' : 'disabled'}>${nextLabel}</button>
+                    <label style="margin:0 0 0 1rem; font-size:0.9rem; color:#475569;">Tampilkan:</label>
+                    <select id="formsPerPageSelect" style="padding:0.35rem 0.5rem; border-radius:0.375rem; border:1px solid #e5e7eb;">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div style="font-weight:600">${pageText}</div>
+            `;
+
+            const prev = document.getElementById('formsPrevBtn');
+            const next = document.getElementById('formsNextBtn');
+            if (prev) prev.onclick = () => { if (formsPage > 1) reloadFormsTable(formsPage - 1); };
+            if (next) next.onclick = () => { if (formsHasMore) reloadFormsTable(formsPage + 1); };
+
+            const sel = document.getElementById('formsPerPageSelect');
+            if (sel) {
+                sel.value = String(formsPerPage || 15);
+                sel.onchange = () => { formsPerPage = parseInt(sel.value, 10) || 15; formsPage = 1; formsHasMore = false; reloadFormsTable(1); };
+            }
+        }
+
+        // Initialize Table Pagination and lazy load (use server-side when category param present)
+        document.addEventListener('DOMContentLoaded', function() {
+            const category = getSelectedCategoryFromUrl();
+            if (category) {
+                // Server-side per-category paging
+                reloadFormsTable(1);
+            } else {
+                // Client-side fallback (full list)
+                const formsPagination = initTablePagination('forms-table', {
+                    rowsPerPage: 10,
+                    rowsPerPageOptions: [10, 25, 50, 100]
+                });
+                // Lazy load forms via AJAX (skeleton shown until data arrives)
+                reloadFormsTable();
+            }
         });
     </script>
 </body>

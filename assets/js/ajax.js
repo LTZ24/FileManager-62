@@ -72,6 +72,7 @@ class AjaxLoader {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 },
+                credentials: 'same-origin',
                 signal: controller.signal
             });
 
@@ -121,6 +122,8 @@ class AjaxLoader {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
+                ,
+                credentials: 'same-origin'
             });
 
             if (!response.ok) {

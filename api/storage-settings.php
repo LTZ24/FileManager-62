@@ -74,13 +74,15 @@ function getDefaultConfig() {
             'kesiswaan' => '',
             'kurikulum' => '',
             'sapras' => '',
-            'tata_usaha' => ''
+            'tata_usaha' => '',
+            'dokumentasi' => ''
         ],
         'sheets' => [
             'kesiswaan' => '',
             'kurikulum' => '',
             'sapras' => '',
-            'tata_usaha' => ''
+            'tata_usaha' => '',
+            'dokumentasi' => ''
         ]
     ];
 }
@@ -216,7 +218,8 @@ function handleUpdateAll() {
         'folder_kesiswaan' => 'kesiswaan',
         'folder_kurikulum' => 'kurikulum',
         'folder_sapras' => 'sapras',
-        'folder_tata_usaha' => 'tata_usaha'
+        'folder_tata_usaha' => 'tata_usaha',
+        'folder_dokumentasi' => 'dokumentasi'
     ];
     
     foreach ($folderFields as $postKey => $configKey) {
@@ -232,7 +235,8 @@ function handleUpdateAll() {
         'sheets_kesiswaan' => 'kesiswaan',
         'sheets_kurikulum' => 'kurikulum',
         'sheets_sapras' => 'sapras',
-        'sheets_tata_usaha' => 'tata_usaha'
+        'sheets_tata_usaha' => 'tata_usaha',
+        'sheets_dokumentasi' => 'dokumentasi'
     ];
     
     foreach ($sheetFields as $postKey => $configKey) {
@@ -299,7 +303,8 @@ function handleUpdateFolders() {
         'kesiswaan' => extractIdFromUrl($_POST['folder_kesiswaan'] ?? ''),
         'kurikulum' => extractIdFromUrl($_POST['folder_kurikulum'] ?? ''),
         'sapras' => extractIdFromUrl($_POST['folder_sapras'] ?? ''),
-        'tata_usaha' => extractIdFromUrl($_POST['folder_tata_usaha'] ?? '')
+        'tata_usaha' => extractIdFromUrl($_POST['folder_tata_usaha'] ?? ''),
+        'dokumentasi' => extractIdFromUrl($_POST['folder_dokumentasi'] ?? '')
     ];
     
     $hasFolder = false;
@@ -337,7 +342,8 @@ function handleUpdateSheets() {
         'kesiswaan' => extractIdFromUrl($_POST['sheets_kesiswaan'] ?? ''),
         'kurikulum' => extractIdFromUrl($_POST['sheets_kurikulum'] ?? ''),
         'sapras' => extractIdFromUrl($_POST['sheets_sapras'] ?? ''),
-        'tata_usaha' => extractIdFromUrl($_POST['sheets_tata_usaha'] ?? '')
+        'tata_usaha' => extractIdFromUrl($_POST['sheets_tata_usaha'] ?? ''),
+        'dokumentasi' => extractIdFromUrl($_POST['sheets_dokumentasi'] ?? '')
     ];
     
     $hasSheet = false;

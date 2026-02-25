@@ -562,6 +562,11 @@ $categories = getLinkCategories();
         let linksData = [];
         const BASE_URL = <?php echo json_encode(BASE_URL); ?>;
         const LINKS_DATA_URL = BASE_URL + '/api/links-data';
+
+        // Server-side paging (only supported when a single category is requested)
+        let linksPerPage = 15;
+        let linksPage = 1;
+        let linksHasMore = false;
     </script>
     
     <script src="<?php echo BASE_URL; ?>/assets/js/table-pagination.js"></script>
@@ -679,7 +684,7 @@ $categories = getLinkCategories();
             }
         }
 
-        async function reloadLinksTable() {
+        async function reloadLinksTable(page = 1) {
             const skeleton = document.getElementById('skeletonLinks');
             const wrapper = document.getElementById('linksTableWrapper');
             const emptyState = document.getElementById('linksEmptyState');
@@ -688,13 +693,29 @@ $categories = getLinkCategories();
             try {
                 const category = getSelectedCategoryFromUrl();
                 const url = new URL(LINKS_DATA_URL, window.location.origin);
-                if (category) url.searchParams.set('category', category);
+                if (category) {
+                    url.searchParams.set('category', category);
+                    url.searchParams.set('page', page);
+                    url.searchParams.set('per_page', linksPerPage);
+                }
                 url.searchParams.set('ajax', '1');
                 url.searchParams.set('_t', Date.now());
 
                 const data = await fetchJson(url.toString());
                 linksData = (data && data.data && data.data.links) ? data.data.links : [];
+
+                // update paging state when server-side mode is used
+                if (category) {
+                    linksPage = page;
+                    linksHasMore = !!(data && data.data && data.data.has_more);
+                } else {
+                    linksPage = 1;
+                    linksHasMore = false;
+                }
+
                 renderLinksTable();
+
+                if (category) renderLinksPaginationControls();
             } catch (e) {
                 console.error('Failed to load links:', e);
                 if (emptyState) {
@@ -931,16 +952,74 @@ $categories = getLinkCategories();
             }
         }
         
-        // Initialize Table Pagination and lazy load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize pagination with 10 rows per page
-            const linksPagination = initTablePagination('links-table', {
-                rowsPerPage: 10,
-                rowsPerPageOptions: [10, 25, 50, 100]
-            });
+        function renderLinksPaginationControls() {
+            let container = document.getElementById('linksServerPagination');
+            const category = getSelectedCategoryFromUrl();
+            if (!category) {
+                if (container) container.style.display = 'none';
+                return;
+            }
 
-            // Lazy load links via AJAX (skeleton shown until data arrives)
-            reloadLinksTable();
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'linksServerPagination';
+                container.style.display = 'flex';
+                container.style.justifyContent = 'space-between';
+                container.style.alignItems = 'center';
+                container.style.marginTop = '0.75rem';
+                const tableWrapper = document.getElementById('links-table').closest('.links-table');
+                if (tableWrapper) tableWrapper.appendChild(container);
+                else document.getElementById('linksTableWrapper').appendChild(container);
+            }
+
+            const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+            const prevLabel = isMobile ? '&lt;' : 'Prev';
+            const nextLabel = isMobile ? '&gt;' : 'Next';
+            const pageText = isMobile ? `Hal ${linksPage}` : `Halaman ${linksPage}`;
+
+            container.innerHTML = `
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button id="linksPrevBtn" class="btn btn-secondary" ${linksPage === 1 ? 'disabled' : ''}>${prevLabel}</button>
+                    <button id="linksNextBtn" class="btn btn-secondary" ${linksHasMore ? '' : 'disabled'}>${nextLabel}</button>
+                    <label style="margin:0 0 0 1rem; font-size:0.9rem; color:#475569;">Tampilkan:</label>
+                    <select id="linksPerPageSelect" style="padding:0.35rem 0.5rem; border-radius:0.375rem; border:1px solid #e5e7eb;">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div style="font-weight:600">${pageText}</div>
+            `;
+
+            const prev = document.getElementById('linksPrevBtn');
+            const next = document.getElementById('linksNextBtn');
+            if (prev) prev.onclick = () => { if (linksPage > 1) reloadLinksTable(linksPage - 1); };
+            if (next) next.onclick = () => { if (linksHasMore) reloadLinksTable(linksPage + 1); };
+
+            const sel = document.getElementById('linksPerPageSelect');
+            if (sel) {
+                sel.value = String(linksPerPage || 15);
+                sel.onchange = () => { linksPerPage = parseInt(sel.value, 10) || 15; linksPage = 1; linksHasMore = false; reloadLinksTable(1); };
+            }
+        }
+
+        // Initialize Table Pagination and lazy load (use server-side when category param present)
+        document.addEventListener('DOMContentLoaded', function() {
+            const category = getSelectedCategoryFromUrl();
+            if (category) {
+                // Server-side per-category paging
+                reloadLinksTable(1);
+            } else {
+                // Client-side fallback (full list)
+                const linksPagination = initTablePagination('links-table', {
+                    rowsPerPage: 10,
+                    rowsPerPageOptions: [10, 25, 50, 100]
+                });
+                // Lazy load links via AJAX (skeleton shown until data arrives)
+                reloadLinksTable();
+            }
         });
     </script>
 </body>

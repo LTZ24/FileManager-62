@@ -19,6 +19,7 @@ class UploadManager {
         this.onComplete = options.onComplete || (() => {});
         this.onError = options.onError || (() => {});
         this.onProgress = options.onProgress || (() => {});
+        this.uiOnly = options.uiOnly || false;
         
         this.uploadQueue = [];
         this.isUploading = false;
@@ -32,9 +33,22 @@ class UploadManager {
     }
     
     init() {
-        this.createUploadContainer();
+        if (!this.uiOnly) {
+            this.createUploadContainer();
+        }
         this.createNotificationDropdown();
-        this.startKeepalive();
+        if (!this.uiOnly) this.startKeepalive();
+        this.restoreStateFromStorage();
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'uploadManager:state' && e.newValue) {
+                try {
+                    const payload = JSON.parse(e.newValue);
+                    if (payload && Array.isArray(payload.items)) {
+                        this.mergeRemoteState(payload.items);
+                    }
+                } catch (err) {}
+            }
+        });
     }
     
     createUploadContainer() {
@@ -80,6 +94,89 @@ class UploadManager {
     createNotificationDropdown() {
         // Upload section is now static in header.php, just get reference to the list element
         this.notificationDropdown = document.getElementById('uploadDropdownList');
+    }
+
+    ensureWorker() {
+        try {
+            // Open or reuse a named window
+            const url = (this.baseUrl || '') + '/pages/files/upload-worker.html';
+            const name = 'fm_upload_worker';
+            const features = 'width=600,height=400,left=100,top=100,menubar=no,location=no,toolbar=no,status=no';
+            let win = window.open('', name);
+            if (!win || win.closed) {
+                win = window.open(url, name, features);
+            } else {
+                // If window exists, navigate it to worker URL if needed
+                try {
+                    if (win.location && win.location.pathname !== new URL(url, window.location.origin).pathname) {
+                        win.location.href = url;
+                    }
+                } catch (e) {
+                    // ignore cross-access errors
+                }
+            }
+            return win;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    sendToWorker(files, category) {
+        const worker = this.ensureWorker();
+        if (!worker) return false;
+
+        try {
+            worker.postMessage({ type: 'addFiles', files: files, category: category }, '*');
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    mergeRemoteState(items) {
+        // items: [{id,name,size,category,status,progress,error}]
+        let changed = false;
+        for (const remote of items) {
+            const idx = this.uploadQueue.findIndex(i => i.id === remote.id);
+            if (idx === -1) {
+                const placeholder = {
+                    id: remote.id,
+                    file: { name: remote.name, size: remote.size },
+                    category: remote.category,
+                    status: remote.status,
+                    progress: remote.progress || 0,
+                    error: remote.error || null,
+                    _placeholder: true
+                };
+                this.uploadQueue.push(placeholder);
+                this.renderUploadItem(placeholder);
+                changed = true;
+            } else {
+                const local = this.uploadQueue[idx];
+                // update fields without touching xhr/file
+                local.status = remote.status;
+                local.progress = remote.progress || 0;
+                local.error = remote.error || null;
+                this.updateUploadItem(local);
+                changed = true;
+            }
+        }
+        if (changed) {
+            this.updateSummary();
+            this.updateBadge();
+            this.syncToDropdown();
+        }
+    }
+
+    restoreStateFromStorage() {
+        try {
+            const raw = localStorage.getItem('uploadManager:state');
+            if (!raw) return;
+            const payload = JSON.parse(raw);
+            if (payload && Array.isArray(payload.items)) {
+                this.mergeRemoteState(payload.items);
+            }
+        } catch (e) {}
     }
     
     injectStyles() {
@@ -924,7 +1021,19 @@ class UploadManager {
         const item = this.uploadQueue[index];
         
         // If uploading, abort the XHR request
-        if (item.status === 'uploading' && item.xhr) {
+        if (item._workerControlled) {
+            // Tell worker to abort this item if worker is managing it
+            try {
+                const win = this.ensureWorker();
+                if (win && !win.closed) {
+                    win.postMessage({ type: 'abort', id: itemId }, '*');
+                }
+            } catch (e) {}
+            item.status = 'cancelled';
+            if (typeof window.showToast === 'function') {
+                window.showToast('Upload dibatalkan', 'error');
+            }
+        } else if (item.status === 'uploading' && item.xhr) {
             item.xhr.abort();
             item.status = 'cancelled';
             if (typeof window.showToast === 'function') {
@@ -990,7 +1099,7 @@ class UploadManager {
     }
     
     /**
-     * Add files to upload queue and auto-hide panel
+     * Add files to upload queue
      */
     addFiles(files, category) {
         const fileArray = Array.from(files);
@@ -1004,13 +1113,51 @@ class UploadManager {
             return;
         }
         
-        // Validate files and add to queue
+        // Try to delegate uploads to a persistent worker window
+        const filesWithIds = [];
         for (const file of fileArray) {
             if (file.size > this.maxFileSize) {
                 this.showToast(`File "${file.name}" melebihi batas 100MB`, 'error');
                 continue;
             }
-            
+            filesWithIds.push({ id: this.generateId(), file });
+        }
+
+        if (filesWithIds.length === 0) return;
+
+        const dispatchedToWorker = this.sendToWorker(filesWithIds, category);
+        if (dispatchedToWorker) {
+            // Create lightweight UI placeholders
+            for (const f of filesWithIds) {
+                const uploadItem = {
+                    id: f.id,
+                    file: f.file,
+                    category: category,
+                    status: 'pending',
+                    progress: 0,
+                    error: null,
+                    _workerControlled: true
+                };
+
+                this.uploadQueue.push(uploadItem);
+                this.renderUploadItem(uploadItem);
+            }
+
+            this.show();
+            this.updateSummary();
+            this.updateBadge();
+            setTimeout(() => this.minimizeToDropdown(), 500);
+            // Worker updates state via storage
+            return;
+        }
+
+        // Local upload fallback
+        for (const file of fileArray) {
+            if (file.size > this.maxFileSize) {
+                this.showToast(`File "${file.name}" melebihi batas 100MB`, 'error');
+                continue;
+            }
+
             const uploadItem = {
                 id: this.generateId(),
                 file: file,
@@ -1019,22 +1166,20 @@ class UploadManager {
                 progress: 0,
                 error: null
             };
-            
+
             this.uploadQueue.push(uploadItem);
             this.renderUploadItem(uploadItem);
         }
         
-        // Show briefly then auto-minimize to dropdown when starting upload
+        // Show then minimize to dropdown and start processing
         this.show();
         this.updateSummary();
         this.updateBadge();
-        
-        // Auto-hide after short delay and start processing
+
         setTimeout(() => {
             this.minimizeToDropdown();
+            this.processQueue();
         }, 500);
-        
-        this.processQueue();
     }
     
     generateId() {
@@ -1378,6 +1523,16 @@ function initUploadManager(category, baseUrl) {
     
     return uploadManager;
 }
+
+// Ensure a lightweight UI-only manager exists on pages with header upload dropdown
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const hasHeaderUpload = !!document.getElementById('uploadDropdownList') || !!document.getElementById('userMenuToggle');
+        if (hasHeaderUpload && !window.uploadManager) {
+            window.uploadManager = new UploadManager({ baseUrl: window.baseUrl || '', uiOnly: true });
+        }
+    } catch (e) {}
+});
 
 /**
  * Open batch file selector - auto hides upload panel when files selected

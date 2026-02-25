@@ -779,12 +779,12 @@ if ($isAdmin) {
                     
                     <div class="setting-item">
                         <div class="setting-info">
-                            <h3>Setup OAuth Google</h3>
+                            <h3>Setup Google</h3>
                             <p>Hubungkan akun Google untuk akses penulisan ke Drive</p>
                         </div>
                         <div class="setting-action">
                             <a class="btn btn-outline" href="<?php echo htmlspecialchars(BASE_URL . '/pages/setup-google?token=' . urlencode(generateSetupToken())); ?>">
-                                <i class="fab fa-google"></i> Setup OAuth
+                                <i class="fab fa-google"></i> Setup
                             </a>
                         </div>
                     </div>
@@ -950,6 +950,13 @@ if ($isAdmin) {
                             </label>
                             <input type="text" name="folder_tata_usaha" id="fieldFolderTataUsaha" placeholder="Paste link folder atau ID baru">
                         </div>
+                        <div class="storage-form-group">
+                            <label>
+                                <i class="fas fa-photo-video" style="color: #f97316;"></i> Folder Dokumentasi
+                                <span class="field-status empty" id="statusFolderDokumentasi">Belum diisi</span>
+                            </label>
+                            <input type="text" name="folder_dokumentasi" id="fieldFolderDokumentasi" placeholder="Paste link folder atau ID baru">
+                        </div>
                     </div>
 
                     <!-- Tab: Sheets -->
@@ -982,6 +989,13 @@ if ($isAdmin) {
                                 <span class="field-status empty" id="statusSheetTataUsaha">Belum diisi</span>
                             </label>
                             <input type="text" name="sheets_tata_usaha" id="fieldSheetTataUsaha" placeholder="Paste link spreadsheet atau ID baru">
+                        </div>
+                        <div class="storage-form-group">
+                            <label>
+                                <i class="fas fa-photo-video" style="color: #f97316;"></i> Spreadsheet Dokumentasi
+                                <span class="field-status empty" id="statusSheetDokumentasi">Belum diisi</span>
+                            </label>
+                            <input type="text" name="sheets_dokumentasi" id="fieldSheetDokumentasi" placeholder="Paste link spreadsheet atau ID baru">
                         </div>
                     </div>
                 </div>
@@ -1169,12 +1183,14 @@ if ($isAdmin) {
             setStatus('statusFolderKurikulum', !!storageConfig.drive_folders?.kurikulum);
             setStatus('statusFolderSapras', !!storageConfig.drive_folders?.sapras);
             setStatus('statusFolderTataUsaha', !!storageConfig.drive_folders?.tata_usaha);
+            setStatus('statusFolderDokumentasi', !!storageConfig.drive_folders?.dokumentasi);
 
             // Sheets
             setStatus('statusSheetKesiswaan', !!storageConfig.sheets?.kesiswaan);
             setStatus('statusSheetKurikulum', !!storageConfig.sheets?.kurikulum);
             setStatus('statusSheetSapras', !!storageConfig.sheets?.sapras);
             setStatus('statusSheetTataUsaha', !!storageConfig.sheets?.tata_usaha);
+            setStatus('statusSheetDokumentasi', !!storageConfig.sheets?.dokumentasi);
         }
 
         // ===== Storage Modal Open / Close =====

@@ -878,6 +878,17 @@ body {
     gap: 1rem;
 }
 
+/* Row for single extra category (centered under main grid) */
+.category-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.category-row .category-card {
+    width: 100%;
+}
+
 .category-card {
     display: flex;
     flex-direction: column;

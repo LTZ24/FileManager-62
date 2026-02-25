@@ -27,6 +27,7 @@ if (!$lazyLoad) {
             'kurikulum' => 'kurikulum',
             'sapras' => 'sapras-humas',
             'tata_usaha' => 'tata-usaha'
+            , 'dokumentasi' => 'dokumentasi'
         ];
         
         $allFiles = [];
@@ -119,6 +120,7 @@ $categoryMap = [
     'kurikulum' => 'kurikulum',
     'sapras-humas' => 'sapras',
     'tata-usaha' => 'tata_usaha'
+    , 'dokumentasi' => 'dokumentasi'
 ];
 $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$categoryParam] : null;
 ?>
@@ -503,9 +505,9 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
             <?php include __DIR__ . '/../../includes/page-navigation.php'; ?>
             
             <div class="files-header">
-                <button type="button" class="btn btn-primary" onclick="openUploadModal()">
+                <a class="btn btn-primary" href="<?php echo BASE_URL; ?>/pages/files/upload">
                     <i class="fas fa-cloud-upload-alt"></i> Upload File
-                </button>
+                </a>
             </div>
             
             <div class="files-container">
@@ -518,25 +520,29 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                         <option value="kurikulum">Kurikulum</option>
                         <option value="sapras">Sapras & Humas</option>
                         <option value="tata_usaha">Tata Usaha</option>
+                        <option value="dokumentasi">Dokumentasi</option>
                     </select>
                 </div>
                 
                 <!-- Desktop Category Buttons -->
                 <div class="category-filters">
-                    <button class="category-filter-btn active" onclick="filterByCategory('all')">
+                    <button class="category-filter-btn active" data-category="all" onclick="filterByCategory('all')">
                         <i class="fas fa-th"></i> Semua Kategori
                     </button>
-                    <button class="category-filter-btn" onclick="filterByCategory('kesiswaan')" data-color="#3b82f6">
+                    <button class="category-filter-btn" data-category="kesiswaan" onclick="filterByCategory('kesiswaan')" data-color="#3b82f6">
                         <i class="fas fa-users"></i> Kesiswaan
                     </button>
-                    <button class="category-filter-btn" onclick="filterByCategory('kurikulum')" data-color="#10b981">
+                    <button class="category-filter-btn" data-category="kurikulum" onclick="filterByCategory('kurikulum')" data-color="#10b981">
                         <i class="fas fa-book"></i> Kurikulum
                     </button>
-                    <button class="category-filter-btn" onclick="filterByCategory('sapras')" data-color="#f59e0b">
+                    <button class="category-filter-btn" data-category="sapras" onclick="filterByCategory('sapras')" data-color="#f59e0b">
                         <i class="fas fa-building"></i> Sapras & Humas
                     </button>
-                    <button class="category-filter-btn" onclick="filterByCategory('tata_usaha')" data-color="#8b5cf6">
+                    <button class="category-filter-btn" data-category="tata_usaha" onclick="filterByCategory('tata_usaha')" data-color="#8b5cf6">
                         <i class="fas fa-briefcase"></i> Tata Usaha
+                    </button>
+                    <button class="category-filter-btn" data-category="dokumentasi" onclick="filterByCategory('dokumentasi')" data-color="#f97316">
+                        <i class="fas fa-photo-video"></i> Dokumentasi
                     </button>
                 </div>
                 <?php else: ?>
@@ -553,6 +559,8 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                             'kurikulum' => 'Kurikulum',
                             'sapras' => 'Sapras & Humas',
                             'tata_usaha' => 'Tata Usaha'
+                                ,
+                                'dokumentasi' => 'Dokumentasi'
                         ];
                         echo $categoryNames[$selectedCategory];
                         ?>
@@ -893,19 +901,9 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
             }
         }
 
-        async function reloadFilesTable() {
-            const url = new URL(FILES_DATA_URL, window.location.origin);
-            url.searchParams.set('ajax', '1');
-            if (SELECTED_CATEGORY) {
-                url.searchParams.set('category', SELECTED_CATEGORY);
-            }
-
-            const data = await fetchJson(url.toString());
-            const files = (data && data.data && data.data.files) ? data.data.files : [];
-            renderFilesTable(files);
-            // re-apply current filters/sorts
-            try { sortFiles(); } catch (e) {}
-            try { filterFiles(); } catch (e) {}
+        async function reloadFilesTable(page = null) {
+            if (page !== null) filesPage = page;
+            await fetchFilesPage(filesPage);
         }
 
         function showInlineAlert(el, message, ok) {
@@ -1080,14 +1078,14 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                 });
             }
             
-            // Add files to upload manager (auto-minimizes to notification dropdown)
+            // Add files to upload manager
             window.uploadManager.addFiles(modalSelectedFiles, category);
             
             // Clear selected files
             modalSelectedFiles = [];
             renderModalSelectedFiles();
             
-            // Auto-close modal after starting upload
+            // Close modal after starting upload
             setTimeout(() => {
                 closeUploadModal();
             }, 300);
@@ -1162,13 +1160,34 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
         
         function filterByCategory(category) {
             currentCategory = category;
-            
+
             document.querySelectorAll('.category-filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.closest('.category-filter-btn').classList.add('active');
-            
-            filterFiles();
+
+            // Select the matching button by data-category attribute instead of relying on global event
+            const btn = document.querySelector('.category-filter-btn[data-category="' + category + '"]');
+            if (btn && btn.classList) btn.classList.add('active');
+
+            // If we are in lazy/server-side mode, trigger server-side reload for the selected category
+            if (LAZY_LOAD) {
+                // reset paging state for the current per-page and category
+                filesPage = 1;
+                filesHasMore = false;
+                resetTokensFor(filesPerPage, (SELECTED_CATEGORY && SELECTED_CATEGORY !== null) ? SELECTED_CATEGORY : (currentCategory && currentCategory !== 'all' ? currentCategory : ''));
+
+                // If switching to 'all', ensure default sort is 'modified_desc' and fetch larger page
+                if (category === 'all') {
+                    const sortEl = document.getElementById('sortSelect');
+                    if (sortEl) sortEl.value = 'modified_desc';
+                }
+
+                // Load server-side page for the selection
+                reloadFilesTable(1);
+            } else {
+                // Non-lazy: client-side filtering
+                filterFiles();
+            }
         }
         
         function filterFiles() {
@@ -1272,10 +1291,10 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
             if (LAZY_LOAD) {
                 loadFilesData();
             } else {
-                // Initialize pagination with 10 rows per page
+                // Initialize pagination with configured rows per page
                 window.filesPagination = initTablePagination('filesTable', {
-                    rowsPerPage: 10,
-                    rowsPerPageOptions: [10, 25, 50, 100]
+                    rowsPerPage: filesPerPage || 10,
+                    rowsPerPageOptions: [5, 10, 15, 25, 50]
                 });
             }
             
@@ -1286,79 +1305,171 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
             <?php endif; ?>
         });
         
-        // Lazy load files data via AJAX
-        async function loadFilesData() {
+        // Server-side paged fetch (per_page) default for category views
+        const FILES_PER_PAGE = 15;
+        // rows per page control (5,10,15,25,50)
+        let filesPerPage = 25; // default when viewing all categories
+        let filesPage = 1;
+        // tokens keyed by `${perPage}|${category}` -> { pageNumber: token }
+        let filesPageTokensMap = {};
+
+        function tokensKey(perPage, category) {
+            return `${perPage}|${category || 'all'}`;
+        }
+
+        function getPageTokenFor(page, perPage, category) {
+            const key = tokensKey(perPage, category);
+            return (filesPageTokensMap[key] && filesPageTokensMap[key][page]) ? filesPageTokensMap[key][page] : '';
+        }
+
+        function setPageTokenFor(page, token, perPage, category) {
+            const key = tokensKey(perPage, category);
+            filesPageTokensMap[key] = filesPageTokensMap[key] || {};
+            if (token && token !== '') filesPageTokensMap[key][page] = token;
+        }
+
+        function resetTokensFor(perPage, category) {
+            const key = tokensKey(perPage, category);
+            filesPageTokensMap[key] = {1: ''};
+        }
+        let filesHasMore = false;
+
+        function renderFilesPaginationControls() {
+            let container = document.getElementById('filesServerPagination');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'filesServerPagination';
+                container.style.display = 'flex';
+                container.style.justifyContent = 'space-between';
+                container.style.alignItems = 'center';
+                container.style.marginTop = '0.75rem';
+                const tableWrapper = document.getElementById('filesTable').closest('.files-table');
+                tableWrapper.appendChild(container);
+            }
+
+            const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+            const prevLabel = isMobile ? '&lt;' : 'Prev';
+            const nextLabel = isMobile ? '&gt;' : 'Next';
+            const pageText = isMobile ? `Hal ${filesPage}` : `Halaman ${filesPage}`;
+
+            container.innerHTML = `
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button id="filesPrevBtn" class="btn btn-secondary" ${filesPage === 1 ? 'disabled' : ''}>${prevLabel}</button>
+                    <button id="filesNextBtn" class="btn btn-secondary" ${filesHasMore ? '' : 'disabled'}>${nextLabel}</button>
+                    <label style="margin:0 0 0 1rem; font-size:0.9rem; color:#475569;">Tampilkan:</label>
+                    <select id="filesPerPageSelect" style="padding:0.35rem 0.5rem; border-radius:0.375rem; border:1px solid #e5e7eb;">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div style="font-weight:600">${pageText}</div>
+            `;
+
+            // Prev/Next handlers
+            const prevBtn = document.getElementById('filesPrevBtn');
+            const nextBtn = document.getElementById('filesNextBtn');
+            if (prevBtn) prevBtn.onclick = () => { if (filesPage > 1) { filesPage--; fetchFilesPage(filesPage); } };
+            if (nextBtn) nextBtn.onclick = () => { if (filesHasMore) { filesPage++; fetchFilesPage(filesPage); } };
+
+            // rows-per-page select handling
+            const sel = document.getElementById('filesPerPageSelect');
+            if (sel) {
+                sel.value = String(filesPerPage);
+                sel.onchange = () => {
+                    const v = parseInt(sel.value) || 25;
+                    filesPerPage = v;
+                    // reset paging state and reload
+                    filesPage = 1;
+                    filesHasMore = false;
+                    resetTokensFor(filesPerPage, (SELECTED_CATEGORY && SELECTED_CATEGORY !== null) ? SELECTED_CATEGORY : (currentCategory && currentCategory !== 'all' ? currentCategory : ''));
+
+                    // If non-lazy (client-side) update table pagination instance
+                    if (!LAZY_LOAD) {
+                        if (window.filesPagination) {
+                            window.filesPagination.rowsPerPage = filesPerPage;
+                            window.filesPagination.currentPage = 1;
+                            try { window.filesPagination.render(); } catch (e) {}
+                        } else {
+                            window.filesPagination = initTablePagination('filesTable', { rowsPerPage: filesPerPage, rowsPerPageOptions: [5,10,15,25,50] });
+                        }
+                    }
+
+                    reloadFilesTable(1);
+                };
+            }
+
+            // re-render controls on resize to update labels for mobile/desktop
+            if (!container._filesPaginationResizeAttached) {
+                window.addEventListener('resize', () => {
+                    clearTimeout(container._filesPaginationResizeTimer);
+                    container._filesPaginationResizeTimer = setTimeout(() => renderFilesPaginationControls(), 150);
+                });
+                container._filesPaginationResizeAttached = true;
+            }
+        }
+
+        async function fetchFilesPage(page) {
             try {
                 const url = new URL(FILES_DATA_URL, window.location.origin);
                 url.searchParams.set('ajax', '1');
-                if (SELECTED_CATEGORY) {
-                    url.searchParams.set('category', SELECTED_CATEGORY);
+
+                // Determine category to request: server-provided SELECTED_CATEGORY (page param) takes precedence,
+                // otherwise use client-selected currentCategory when it's not 'all'.
+                const categoryParam = (SELECTED_CATEGORY && SELECTED_CATEGORY !== null) ? SELECTED_CATEGORY : (currentCategory && currentCategory !== 'all' ? currentCategory : '');
+
+                // Adaptive page size: use user-selected filesPerPage when present; fallback to FILES_PER_PAGE for categories
+                const perPage = (typeof filesPerPage === 'number' && filesPerPage > 0) ? filesPerPage : (categoryParam === '' ? 25 : FILES_PER_PAGE);
+                url.searchParams.set('per_page', perPage);
+
+                // only send pageToken when it belongs to the same perPage+category context
+                const token = getPageTokenFor(page, perPage, categoryParam);
+                if (token) url.searchParams.set('page_token', token);
+                if (categoryParam) url.searchParams.set('category', categoryParam);
+
+                // Default sort: when viewing all categories ensure default is 'modified_desc'
+                if (!categoryParam) {
+                    const sortEl = document.getElementById('sortSelect');
+                    if (sortEl && !sortEl.value) sortEl.value = 'modified_desc';
                 }
-                
-                console.log('[LazyLoad] Fetching files from:', url.toString());
+
                 const data = await fetchJson(url.toString());
-                console.log('[LazyLoad] Response:', data);
                 const files = (data && data.data && data.data.files) ? data.data.files : [];
-                console.log('[LazyLoad] Files count:', files.length);
-                
-                // Hide skeleton loader
+
+                renderFilesTable(files);
+
+                // update tokens and hasMore (store token in per-(perPage,category) map)
+                const nextToken = (data && data.data && (data.data.next_page_token ?? data.data.files_next_page_token)) || null;
+                filesHasMore = !!(nextToken && nextToken !== '');
+                if (nextToken) setPageTokenFor(page + 1, nextToken, perPage, categoryParam);
+
+                // render pagination UI
+                renderFilesPaginationControls();
+
+                // apply filters/sorts locally for current page
+                try { sortFiles(); } catch (e) {}
+                try { filterFiles(); } catch (e) {}
+
+                // Show table
                 const skeleton = document.getElementById('skeletonLoader');
-                console.log('[LazyLoad] Skeleton element:', skeleton);
-                if (skeleton) {
-                    skeleton.style.display = 'none';
-                }
-                
-                // Get the real table
+                if (skeleton) skeleton.style.display = 'none';
                 const filesTable = document.getElementById('filesTable');
-                console.log('[LazyLoad] Files table element:', filesTable);
-                
-                if (files.length === 0) {
-                    // Show empty state - hide table, show empty message
-                    console.log('[LazyLoad] No files, showing empty state');
-                    if (filesTable) {
-                        filesTable.style.display = 'none';
-                    }
-                    const emptyDiv = document.createElement('div');
-                    emptyDiv.className = 'empty-state';
-                    emptyDiv.innerHTML = '<i class="fas fa-inbox"></i><h3>Belum Ada File</h3><p>Upload file pertama Anda dengan klik tombol "Upload File"</p>';
-                    skeleton.parentNode.insertBefore(emptyDiv, skeleton);
-                } else {
-                    // Render files
-                    console.log('[LazyLoad] Rendering files...');
-                    renderFilesTable(files);
-                    
-                    // Show the real table
-                    if (filesTable) {
-                        filesTable.style.display = 'table';
-                        console.log('[LazyLoad] Table shown, display:', filesTable.style.display);
-                    } else {
-                        console.error('[LazyLoad] ERROR: filesTable element not found!');
-                    }
-                    
-                    // Initialize pagination
-                    window.filesPagination = initTablePagination('filesTable', {
-                        rowsPerPage: 10,
-                        rowsPerPageOptions: [10, 25, 50, 100]
-                    });
-                    
-                    // Apply filters
-                    try { sortFiles(); } catch (e) {}
-                    try { filterFiles(); } catch (e) {}
-                }
+                if (filesTable) filesTable.style.display = files.length === 0 ? 'none' : 'table';
             } catch (e) {
-                console.error('Failed to load files:', e);
-                // Hide skeleton
-                const skeleton = document.getElementById('skeletonLoader');
-                if (skeleton) {
-                    skeleton.style.display = 'none';
-                }
-                // Show error
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'empty-state';
-                errorDiv.style.color = '#ef4444';
-                errorDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i><h3>Gagal Memuat Data</h3><p>' + escapeHtml(e.message) + '</p><button class="btn btn-primary" onclick="loadFilesData()"><i class="fas fa-redo"></i> Coba Lagi</button>';
-                skeleton.parentNode.insertBefore(errorDiv, skeleton);
+                console.error('Failed to fetch files page:', e);
             }
+        }
+
+        // Lazy load first page on start
+        async function loadFilesData() {
+            const skeleton = document.getElementById('skeletonLoader');
+            if (skeleton) skeleton.style.display = '';
+            filesPage = 1;
+            filesPageTokens = {1: ''};
+            filesHasMore = false;
+            await fetchFilesPage(1);
         }
     </script>
 </body>

@@ -61,6 +61,10 @@ $__csrfToken = function_exists('generateSecureToken') ? generateSecureToken() : 
         </div>
 
         <div class="header-actions">
+            <button id="installBtn" class="btn btn-outline" style="display:none; margin-right:8px;">
+                <i class="fas fa-download"></i>
+                <span>Install</span>
+            </button>
             <div class="user-menu" id="userMenuToggle">
                 <div class="user-avatar-small">
                     <i class="fas fa-user-circle" style="font-size: 32px; color: #9ca3af;"></i>

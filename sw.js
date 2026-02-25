@@ -50,6 +50,7 @@ const DYNAMIC_CACHE_URLS = [
     'pages/category/kurikulum',
     'pages/category/sapras-humas',
     'pages/category/tata-usaha'
+    , 'pages/category/dokumentasi'
 ].map(p => BASE_PATH + p);
 
 self.addEventListener('install', (event) => {

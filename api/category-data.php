@@ -11,7 +11,13 @@ require_once __DIR__ . '/../includes/ajax_helpers.php';
 requireLogin();
 
 $categoryKey = isset($_GET['category']) ? sanitize((string)$_GET['category']) : '';
-$dataType = isset($_GET['type']) ? sanitize((string)$_GET['type']) : 'all'; // all, files, links, forms
+// dataType: all, files, links, forms
+$dataType = isset($_GET['type']) ? sanitize((string)$_GET['type']) : 'all';
+
+// Pagination for files within category
+$filesPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$filesPerPage = isset($_GET['per_page']) ? max(0, (int)$_GET['per_page']) : 0; // 0 = legacy (no pagination)
+$filesPageToken = isset($_GET['page_token']) ? sanitize((string)$_GET['page_token']) : '';
 
 // Map URL slugs to category keys
 $slugToKey = [
@@ -19,6 +25,7 @@ $slugToKey = [
     'kurikulum' => 'kurikulum',
     'sapras-humas' => 'sapras',
     'tata-usaha' => 'tata_usaha',
+    'dokumentasi' => 'dokumentasi',
 ];
 
 if (isset($slugToKey[$categoryKey])) {
@@ -26,7 +33,7 @@ if (isset($slugToKey[$categoryKey])) {
 }
 
 // Validate category
-$validCategories = ['kesiswaan', 'kurikulum', 'sapras', 'tata_usaha'];
+$validCategories = ['kesiswaan', 'kurikulum', 'sapras', 'tata_usaha', 'dokumentasi'];
 if (!in_array($categoryKey, $validCategories)) {
     ajaxError('Invalid category');
 }
@@ -63,7 +70,44 @@ try {
     if ($dataType === 'all' || $dataType === 'files') {
         $filesCacheKey = "api_category_{$categoryKey}_files";
         
-        if (isset($_SESSION[$filesCacheKey]) && 
+        // If pagination requested, bypass the session cache and fetch a single page
+        if ($filesPerPage > 0) {
+            $driveService = getDriveService();
+            $parameters = [
+                'q' => "'{$folderId}' in parents and trashed=false",
+                'fields' => 'files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink, iconLink, thumbnailLink),nextPageToken',
+                'orderBy' => 'modifiedTime desc',
+                'supportsAllDrives' => true,
+                'includeItemsFromAllDrives' => true,
+                'pageSize' => min(100, $filesPerPage)
+            ];
+            if ($filesPageToken !== '') $parameters['pageToken'] = $filesPageToken;
+
+            $results = $driveService->files->listFiles($parameters);
+            $files = [];
+            foreach ($results->getFiles() as $file) {
+                $modifiedTime = $file->getModifiedTime();
+                $files[] = [
+                    'id' => $file->getId(),
+                    'name' => $file->getName(),
+                    'mimeType' => $file->getMimeType(),
+                    'size' => $file->getSize() ?? 0,
+                    'sizeFormatted' => formatFileSize($file->getSize() ?? 0),
+                    'modifiedTime' => $modifiedTime,
+                    'modifiedFormatted' => $modifiedTime ? formatDateTime($modifiedTime) : '-',
+                    'webViewLink' => $file->getWebViewLink(),
+                    'iconLink' => $file->getIconLink(),
+                    'thumbnailLink' => $file->getThumbnailLink()
+                ];
+            }
+
+            $nextToken = method_exists($results, 'getNextPageToken') ? $results->getNextPageToken() : null;
+            $response['files'] = $files;
+            $response['files_next_page_token'] = $nextToken;
+            $response['files_page'] = $filesPage;
+            $response['files_per_page'] = $filesPerPage;
+            $response['counts']['files'] = count($files);
+        } elseif (isset($_SESSION[$filesCacheKey]) && 
             isset($_SESSION[$filesCacheKey . '_time']) && 
             (time() - $_SESSION[$filesCacheKey . '_time']) < $cacheTime) {
             $response['files'] = $_SESSION[$filesCacheKey];

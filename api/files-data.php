@@ -8,11 +8,17 @@ requireLogin();
 $categoryKey = isset($_GET['category']) ? sanitize((string)$_GET['category']) : '';
 $categoryParam = isset($_GET['categoryParam']) ? sanitize((string)$_GET['categoryParam']) : '';
 
+// Pagination (server-side)
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$perPage = isset($_GET['per_page']) ? max(0, (int)$_GET['per_page']) : 0; // 0 = no pagination (legacy)
+$pageToken = isset($_GET['page_token']) ? sanitize((string)$_GET['page_token']) : '';
+
 $paramToKey = [
     'kesiswaan' => 'kesiswaan',
     'kurikulum' => 'kurikulum',
     'sapras-humas' => 'sapras',
     'tata-usaha' => 'tata_usaha',
+    'dokumentasi' => 'dokumentasi',
 ];
 
 if ($categoryKey === '' && $categoryParam !== '' && isset($paramToKey[$categoryParam])) {
@@ -37,6 +43,7 @@ try {
         'kurikulum' => 'kurikulum',
         'sapras' => 'sapras-humas',
         'tata_usaha' => 'tata-usaha',
+        'dokumentasi' => 'dokumentasi',
     ];
 
     $allFiles = [];
@@ -46,15 +53,24 @@ try {
 
         $parameters = [
             'q' => "'{$folderId}' in parents and trashed=false",
-            'fields' => 'files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink, iconLink, thumbnailLink)',
+            'fields' => 'files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink, iconLink, thumbnailLink),nextPageToken',
             'orderBy' => 'modifiedTime desc',
-            'pageSize' => 1000,
             'supportsAllDrives' => true,
             'includeItemsFromAllDrives' => true,
         ];
 
+        // If perPage is provided, use it for server-side pagination
+        if ($perPage > 0) {
+            $parameters['pageSize'] = min(100, $perPage);
+            if ($pageToken !== '') $parameters['pageToken'] = $pageToken;
+        } else {
+            // legacy behaviour - fetch up to 1000
+            $parameters['pageSize'] = 1000;
+        }
+
         $results = $driveService->files->listFiles($parameters);
         $files = $results->getFiles();
+        $nextPageToken = method_exists($results, 'getNextPageToken') ? $results->getNextPageToken() : null;
 
         foreach ($files as $file) {
             $modifiedTime = $file->getModifiedTime();
@@ -84,7 +100,14 @@ try {
         }
     }
 
-    ajaxSuccess('OK', ['files' => $allFiles]);
+    $resp = ['files' => $allFiles];
+    if ($perPage > 0) {
+        $resp['page'] = $page;
+        $resp['per_page'] = $perPage;
+        $resp['next_page_token'] = $nextPageToken ?? null;
+        $resp['count'] = count($allFiles);
+    }
+    ajaxSuccess('OK', $resp);
 } catch (Exception $e) {
     ajaxError($e->getMessage());
 }

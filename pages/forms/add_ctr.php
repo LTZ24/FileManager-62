@@ -259,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
         });
 
-        // Auto-close on success
+        // Close on success
         <?php if ($success): ?>
             if (window.parent) {
                 window.parent.postMessage('form_added', '*');

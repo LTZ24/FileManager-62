@@ -593,19 +593,27 @@ function getCategoryForms($sheetId, $category) {
                 .replace(/'/g, '&#039;');
         }
 
-        async function reloadFilesTable() {
+        async function reloadFilesTable(page = 1) {
             const skeleton = document.getElementById('skeletonFiles');
             const wrapper = document.getElementById('filesTableWrapper');
             const emptyState = document.getElementById('filesEmptyState');
             const tableEl = document.getElementById('filesTable');
 
             try {
-                const url = new URL(filesDataUrl, window.location.origin);
-                url.searchParams.set('ajax', '1');
-                url.searchParams.set('category', categoryKey);
-                url.searchParams.set('_t', Date.now());
-                const data = await fetchJson(url.toString());
-                const files = (data && data.data && data.data.files) ? data.data.files : [];
+            const url = new URL(filesDataUrl, window.location.origin);
+            url.searchParams.set('ajax', '1');
+            url.searchParams.set('category', categoryKey);
+            url.searchParams.set('type', 'files');
+            url.searchParams.set('per_page', CATEGORY_FILES_PER_PAGE);
+            const token = categoryFilesTokens[page] ?? '';
+            if (token) url.searchParams.set('page_token', token);
+            url.searchParams.set('_t', Date.now());
+            const data = await fetchJson(url.toString());
+            const files = (data && data.data && data.data.files) ? data.data.files : [];
+
+            const nextToken = data && data.data && (data.data.files_next_page_token ?? data.data.next_page_token ?? null);
+            categoryFilesHasMore = !!(nextToken && nextToken !== '');
+            if (nextToken) categoryFilesTokens[page + 1] = nextToken;
 
                 const tbody = document.getElementById('filesTableBody');
                 if (!tbody) return;
@@ -648,15 +656,11 @@ function getCategoryForms($sheetId, $category) {
                     if (emptyState) emptyState.style.display = 'none';
                 }
 
-                if (window.filesPagination && typeof window.filesPagination.refresh === 'function') {
-                    window.filesPagination.refresh();
-                } else if (window.tablePaginationInstances && window.tablePaginationInstances['filesTable']) {
-                    window.tablePaginationInstances['filesTable'].refresh();
-                }
+                renderCategoryFilesPagination();
             } catch (e) {
                 console.error('Failed to load files:', e);
                 if (emptyState) {
-                    emptyState.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h3>Gagal Memuat Data</h3><p>Terjadi kesalahan saat memuat file. <a href="javascript:void(0)" onclick="reloadFilesTable()">Coba lagi</a></p>';
+                    emptyState.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h3>Gagal Memuat Data</h3><p>Terjadi kesalahan saat memuat file. <a href="javascript:void(0)" onclick="reloadFilesTable(1)">Coba lagi</a></p>';
                     emptyState.style.display = '';
                 }
                 if (tableEl) tableEl.style.display = 'none';
@@ -666,7 +670,7 @@ function getCategoryForms($sheetId, $category) {
             }
         }
 
-        async function reloadLinksTable() {
+        async function reloadLinksTable(page = 1) {
             const skeleton = document.getElementById('skeletonLinks');
             const wrapper = document.getElementById('linksTableWrapper');
             const emptyState = document.getElementById('linksEmptyState');
@@ -676,9 +680,15 @@ function getCategoryForms($sheetId, $category) {
                 const url = new URL(linksDataUrl, window.location.origin);
                 url.searchParams.set('ajax', '1');
                 url.searchParams.set('category', categoryKey);
+                if (linksPerPage && Number(linksPerPage) > 0) {
+                    url.searchParams.set('per_page', linksPerPage);
+                    url.searchParams.set('page', page);
+                }
                 url.searchParams.set('_t', Date.now());
                 const data = await fetchJson(url.toString());
                 linksData = (data && data.data && data.data.links) ? data.data.links : [];
+                linksHasMore = !!(data && data.data && (data.data.has_more || data.data.hasMore));
+                linksPage = page;
 
                 const tbody = document.getElementById('linksTableBody');
                 if (!tbody) return;
@@ -721,6 +731,11 @@ function getCategoryForms($sheetId, $category) {
                     if (emptyState) emptyState.style.display = 'none';
                 }
 
+                // Render our server-side pagination controls (preferred)
+                if (typeof renderLinksPagination === 'function') {
+                    renderLinksPagination();
+                }
+
                 if (window.linksPagination && typeof window.linksPagination.refresh === 'function') {
                     window.linksPagination.refresh();
                 } else if (window.tablePaginationInstances && window.tablePaginationInstances['linksTable']) {
@@ -739,7 +754,7 @@ function getCategoryForms($sheetId, $category) {
             }
         }
 
-        async function reloadFormsTable() {
+        async function reloadFormsTable(page = 1) {
             const skeleton = document.getElementById('skeletonForms');
             const wrapper = document.getElementById('formsTableWrapper');
             const emptyState = document.getElementById('formsEmptyState');
@@ -749,9 +764,15 @@ function getCategoryForms($sheetId, $category) {
                 const url = new URL(formsDataUrl, window.location.origin);
                 url.searchParams.set('ajax', '1');
                 url.searchParams.set('category', categoryKey);
+                if (formsPerPage && Number(formsPerPage) > 0) {
+                    url.searchParams.set('per_page', formsPerPage);
+                    url.searchParams.set('page', page);
+                }
                 url.searchParams.set('_t', Date.now());
                 const data = await fetchJson(url.toString());
                 formsData = (data && data.data && data.data.forms) ? data.data.forms : [];
+                formsHasMore = !!(data && data.data && (data.data.has_more || data.data.hasMore));
+                formsPage = page;
 
                 const tbody = document.getElementById('formsTableBody');
                 if (!tbody) return;
@@ -792,6 +813,11 @@ function getCategoryForms($sheetId, $category) {
                 } else {
                     if (tableEl) tableEl.style.display = '';
                     if (emptyState) emptyState.style.display = 'none';
+                }
+
+                // Render our server-side pagination controls (preferred)
+                if (typeof renderFormsPagination === 'function') {
+                    renderFormsPagination();
                 }
 
                 if (window.formsPagination && typeof window.formsPagination.refresh === 'function') {
@@ -867,6 +893,107 @@ function getCategoryForms($sheetId, $category) {
                 if (typeof window.showToast === 'function') {
                     window.showToast('Gagal menghapus form: ' + e.message, 'error');
                 }
+            }
+        }
+
+        // Links & Forms pagination helpers (add missing helpers for this category)
+        let linksPage = 1;
+        let linksPerPage = 10;
+        let linksHasMore = false;
+
+        function renderLinksPagination() {
+            let container = document.getElementById('linksPagination');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'linksPagination';
+                container.style.display = 'flex';
+                container.style.justifyContent = 'space-between';
+                container.style.alignItems = 'center';
+                container.style.marginTop = '0.5rem';
+                const tableWrapper = document.getElementById('linksTable').closest('.section-container');
+                tableWrapper.appendChild(container);
+            }
+
+            const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+            const prevLabel = isMobile ? '&lt;' : 'Prev';
+            const nextLabel = isMobile ? '&gt;' : 'Next';
+            const pageText = isMobile ? `Hal ${linksPage}` : `Halaman ${linksPage}`;
+
+            container.innerHTML = `
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button id="linksPrevBtn" class="btn btn-secondary" ${linksPage === 1 ? 'disabled' : ''}>${prevLabel}</button>
+                    <button id="linksNextBtn" class="btn btn-secondary" ${linksHasMore ? '' : 'disabled'}>${nextLabel}</button>
+                    <label style="margin:0 0 0 1rem; font-size:0.9rem; color:#475569;">Tampilkan:</label>
+                    <select id="linksPerPageSelect" style="padding:0.35rem 0.5rem; border-radius:0.375rem; border:1px solid #e5e7eb;">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div style="font-weight:600">${pageText}</div>
+            `;
+
+            const prevBtn = document.getElementById('linksPrevBtn');
+            const nextBtn = document.getElementById('linksNextBtn');
+            if (prevBtn) prevBtn.onclick = () => { if (linksPage > 1) { linksPage--; reloadLinksTable(linksPage); } };
+            if (nextBtn) nextBtn.onclick = () => { if (linksHasMore) { linksPage++; reloadLinksTable(linksPage); } };
+
+            const sel = document.getElementById('linksPerPageSelect');
+            if (sel) {
+                sel.value = String(linksPerPage || 10);
+                sel.onchange = () => { linksPerPage = parseInt(sel.value, 10) || 10; linksPage = 1; linksHasMore = false; reloadLinksTable(1); };
+            }
+        }
+
+        let formsPage = 1;
+        let formsPerPage = 10;
+        let formsHasMore = false;
+
+        function renderFormsPagination() {
+            let container = document.getElementById('formsPagination');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'formsPagination';
+                container.style.display = 'flex';
+                container.style.justifyContent = 'space-between';
+                container.style.alignItems = 'center';
+                container.style.marginTop = '0.5rem';
+                const tableWrapper = document.getElementById('formsTable').closest('.section-container');
+                tableWrapper.appendChild(container);
+            }
+
+            const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+            const prevLabel = isMobile ? '&lt;' : 'Prev';
+            const nextLabel = isMobile ? '&gt;' : 'Next';
+            const pageText = isMobile ? `Hal ${formsPage}` : `Halaman ${formsPage}`;
+
+            container.innerHTML = `
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button id="formsPrevBtn" class="btn btn-secondary" ${formsPage === 1 ? 'disabled' : ''}>${prevLabel}</button>
+                    <button id="formsNextBtn" class="btn btn-secondary" ${formsHasMore ? '' : 'disabled'}>${nextLabel}</button>
+                    <label style="margin:0 0 0 1rem; font-size:0.9rem; color:#475569;">Tampilkan:</label>
+                    <select id="formsPerPageSelect" style="padding:0.35rem 0.5rem; border-radius:0.375rem; border:1px solid #e5e7eb;">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div style="font-weight:600">${pageText}</div>
+            `;
+
+            const prevBtn = document.getElementById('formsPrevBtn');
+            const nextBtn = document.getElementById('formsNextBtn');
+            if (prevBtn) prevBtn.onclick = () => { if (formsPage > 1) { formsPage--; reloadFormsTable(formsPage); } };
+            if (nextBtn) nextBtn.onclick = () => { if (formsHasMore) { formsPage++; reloadFormsTable(formsPage); } };
+
+            const sel = document.getElementById('formsPerPageSelect');
+            if (sel) {
+                sel.value = String(formsPerPage || 10);
+                sel.onchange = () => { formsPerPage = parseInt(sel.value, 10) || 10; formsPage = 1; formsHasMore = false; reloadFormsTable(1); };
             }
         }
 
@@ -1168,16 +1295,87 @@ function getCategoryForms($sheetId, $category) {
         // Close modal on outside click
         window.onclick = function(e) { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; }
         
-        // Init pagination and lazy load data
+        // Init pagination and lazy load data (server-side paging for files)
+        let CATEGORY_FILES_PER_PAGE = 15;
+        let categoryFilesPage = 1;
+        let categoryFilesTokens = {1: ''};
+        let categoryFilesHasMore = false;
+
+        function renderCategoryFilesPagination() {
+            let container = document.getElementById('categoryFilesPagination');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'categoryFilesPagination';
+                container.style.display = 'flex';
+                container.style.justifyContent = 'space-between';
+                container.style.alignItems = 'center';
+                container.style.marginTop = '0.75rem';
+                const tableWrapper = document.getElementById('filesTable').closest('.section-container');
+                tableWrapper.appendChild(container);
+            }
+
+            const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+            const prevLabel = isMobile ? '&lt;' : 'Prev';
+            const nextLabel = isMobile ? '&gt;' : 'Next';
+            const pageText = isMobile ? `Hal ${categoryFilesPage}` : `Halaman ${categoryFilesPage}`;
+
+            container.innerHTML = `
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button id="catFilesPrevBtn" class="btn btn-secondary" ${categoryFilesPage === 1 ? 'disabled' : ''}>${prevLabel}</button>
+                    <button id="catFilesNextBtn" class="btn btn-secondary" ${categoryFilesHasMore ? '' : 'disabled'}>${nextLabel}</button>
+                    <label style="margin:0 0 0 1rem; font-size:0.9rem; color:#475569;">Tampilkan:</label>
+                    <select id="categoryFilesPerPageSelect" style="padding:0.35rem 0.5rem; border-radius:0.375rem; border:1px solid #e5e7eb;">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div style="font-weight:600">${pageText}</div>
+            `;
+
+            const prevBtn = document.getElementById('catFilesPrevBtn');
+            const nextBtn = document.getElementById('catFilesNextBtn');
+            if (prevBtn) prevBtn.onclick = () => { if (categoryFilesPage > 1) { categoryFilesPage--; reloadFilesTable(categoryFilesPage); } };
+            if (nextBtn) nextBtn.onclick = () => { if (categoryFilesHasMore) { categoryFilesPage++; reloadFilesTable(categoryFilesPage); } };
+
+            const sel = document.getElementById('categoryFilesPerPageSelect');
+            if (sel) {
+                sel.value = String(CATEGORY_FILES_PER_PAGE);
+                sel.onchange = () => {
+                    const v = parseInt(sel.value, 10) || 15;
+                    CATEGORY_FILES_PER_PAGE = v;
+                    categoryFilesPage = 1;
+                    categoryFilesTokens = {1: ''};
+                    categoryFilesHasMore = false;
+                    reloadFilesTable(1);
+                };
+            }
+
+            if (!container._resizeAttached) {
+                window.addEventListener('resize', () => {
+                    clearTimeout(container._resizeTimer);
+                    container._resizeTimer = setTimeout(() => renderCategoryFilesPagination(), 150);
+                });
+                container._resizeAttached = true;
+            }
+        }
+
+        // Lazy load tables via AJAX
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof initTablePagination === 'function') {
-                window.filesPagination = initTablePagination('filesTable', { rowsPerPage: 10, rowsPerPageOptions: [10, 25, 50, 100] });
                 window.linksPagination = initTablePagination('linksTable', { rowsPerPage: 10, rowsPerPageOptions: [10, 25, 50, 100] });
                 window.formsPagination = initTablePagination('formsTable', { rowsPerPage: 10, rowsPerPageOptions: [10, 25, 50, 100] });
             }
-            
-            // Lazy load all tables via AJAX (skeleton shown until data arrives)
-            reloadFilesTable();
+
+            // Load first page of files using server-side pagination
+            categoryFilesPage = 1;
+            categoryFilesTokens = {1: ''};
+            categoryFilesHasMore = false;
+            reloadFilesTable(1);
+
+            // Load links/forms
             reloadLinksTable();
             reloadFormsTable();
         });

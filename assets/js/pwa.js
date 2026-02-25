@@ -117,7 +117,16 @@ class PWAManager {
     
     createInstallButton() {
         if (this.isStandalone) return;
-        
+        // Prefer header install button if present
+        const headerBtn = document.getElementById('installBtn');
+        if (headerBtn) {
+            this.installBtn = headerBtn;
+            this.installBtn.style.display = 'none';
+            this.installBtn.addEventListener('click', () => this.promptInstall());
+            return;
+        }
+
+        // Fallback: create floating install button
         const installBtn = document.createElement('button');
         installBtn.id = 'pwa-install-btn';
         installBtn.className = 'pwa-install-button';
@@ -126,31 +135,35 @@ class PWAManager {
             <i class="fas fa-download"></i>
             <span>Install App</span>
         `;
-        
+
         installBtn.addEventListener('click', () => {
             this.promptInstall();
         });
-        
+
         document.body.appendChild(installBtn);
+        this.installBtn = installBtn;
     }
     
     showInstallButton() {
-        const installBtn = document.getElementById('pwa-install-btn');
-        if (installBtn) {
-            installBtn.style.display = 'flex';
-            setTimeout(() => {
-                installBtn.classList.add('show');
-            }, 100);
+        const btn = this.installBtn || document.getElementById('pwa-install-btn');
+        if (!btn) return;
+        btn.style.display = '';
+        // If using floating style, add class for animation
+        if (btn.classList.contains('pwa-install-button')) {
+            setTimeout(() => btn.classList.add('show'), 100);
         }
     }
     
     hideInstallButton() {
-        const installBtn = document.getElementById('pwa-install-btn');
-        if (installBtn) {
-            installBtn.classList.remove('show');
+        const btn = this.installBtn || document.getElementById('pwa-install-btn');
+        if (!btn) return;
+        if (btn.classList.contains('pwa-install-button')) {
+            btn.classList.remove('show');
             setTimeout(() => {
-                installBtn.style.display = 'none';
+                btn.style.display = 'none';
             }, 300);
+        } else {
+            btn.style.display = 'none';
         }
     }
     

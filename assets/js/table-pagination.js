@@ -200,8 +200,13 @@ class TablePagination {
         
         rightHtml += '</div>';
         
-        // Combine left and right
-        this.paginationContainer.innerHTML = leftHtml + rightHtml;
+        // Middle: page text (Halaman / Hal on mobile)
+        const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+        const pageText = isMobile ? `Hal ${this.currentPage}` : `Halaman ${this.currentPage}`;
+        const middleHtml = `<div class="pagination-center" style="font-weight:600; padding:0 0.5rem; display:flex; align-items:center;">${pageText}</div>`;
+
+        // Combine left, middle and right
+        this.paginationContainer.innerHTML = leftHtml + middleHtml + rightHtml;
         
         // Add event listener for rows select
         const select = document.getElementById(this.rowsSelectId);

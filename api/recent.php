@@ -65,9 +65,14 @@ try {
     echo json_encode($data);
     
 } catch (Exception $e) {
+    // Log the full error for debugging
+    $logPath = __DIR__ . '/../data/api_errors.log';
+    $errEntry = sprintf("[%s] recent.php error: %s\n", date('Y-m-d H:i:s'), $e->getMessage());
+    @file_put_contents($logPath, $errEntry, FILE_APPEND);
+
     http_response_code(500);
     echo json_encode([
         'error' => 'Failed to fetch recent uploads',
-        'message' => $e->getMessage()
+        'message' => 'Server error while fetching recent uploads. See server log.'
     ]);
 }

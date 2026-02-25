@@ -488,9 +488,7 @@ $csrfToken = generateSecureToken();
                     </button>
                 </form>
 
-                <div style="margin-top: 1rem; text-align: center; font-size: 0.875rem; color: #5f6368;">
-                    Belum punya akun? <a href="<?php echo BASE_URL; ?>/auth/register" style="color: #1a73e8; text-decoration: none; font-weight: 500;">Daftar di sini</a>
-                </div>
+                <!-- Registration disabled: self-registration removed -->
             </div>
 
         </div>
@@ -551,21 +549,16 @@ $csrfToken = generateSecureToken();
             } catch (e) {}
         })();
 
-        // PWA Standalone: close app on back button at login page
-        // Android closes PWA when history stack is exhausted.
-        // history.go(-N) past the beginning triggers native app close.
         (function () {
             var isStandalone = window.matchMedia('(display-mode: standalone)').matches
                             || window.navigator.standalone === true
                             || document.referrer.includes('android-app://');
             if (!isStandalone) return;
 
-            // Push a guard state so we intercept the first back press
             window.history.pushState({ pwaLoginGuard: true }, document.title, window.location.href);
 
             window.addEventListener('popstate', function () {
-                // Exhaust the entire history stack — Android will close the PWA
-                // when there are no more entries to go back to
+                
                 var len = window.history.length || 1;
                 window.history.go(-len);
             });

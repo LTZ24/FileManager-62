@@ -31,6 +31,12 @@ $categories = [
         'icon' => 'briefcase',
         'color' => '#8b5cf6'
     ]
+    , 'dokumentasi' => [
+        'name' => 'Dokumentasi',
+        'folder_id' => FOLDER_DOKUMENTASI,
+        'icon' => 'photo-video',
+        'color' => '#f97316'
+    ]
 ];
 
 $selectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
@@ -346,15 +352,29 @@ $isModal = isset($_GET['modal']) && $_GET['modal'] == '1';
                     </label>
                     <div class="category-selector">
                         <?php foreach ($categories as $key => $cat): ?>
+                            <?php if ($key === 'dokumentasi') continue; ?>
                             <div class="category-card" 
                                  onclick="selectCategory('<?php echo $key; ?>', this)"
                                  data-category="<?php echo $key; ?>">
                                 <i class="fas fa-<?php echo $cat['icon']; ?>" 
-                                   style="color: <?php echo $cat['color']; ?>"></i>
+                                   style="color: <?php echo $cat['color']; ?>;"></i>
                                 <div class="category-name"><?php echo $cat['name']; ?></div>
                             </div>
                         <?php endforeach; ?>
                     </div>
+
+                    <?php if (isset($categories['dokumentasi'])): ?>
+                    <div class="category-row" style="margin-top:1rem;">
+                        <div class="category-card" 
+                             onclick="selectCategory('dokumentasi', this)"
+                             data-category="dokumentasi"
+                             style="max-width: 360px;">
+                            <i class="fas fa-<?php echo $categories['dokumentasi']['icon']; ?>" 
+                               style="color: <?php echo $categories['dokumentasi']['color']; ?>;"></i>
+                            <div class="category-name"><?php echo $categories['dokumentasi']['name']; ?></div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                     <input type="hidden" id="categoryInput" value="">
                 </div>
                 <?php else: ?>
@@ -569,7 +589,7 @@ $isModal = isset($_GET['modal']) && $_GET['modal'] == '1';
                 return;
             }
             
-            // Add files to upload manager (auto-hides panel)
+            // Add files to upload manager
             window.uploadManager.addFiles(selectedFiles, category);
             
             // Clear selected files from form (upload manager has them now)

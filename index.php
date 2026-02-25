@@ -156,6 +156,12 @@ if (!isLoggedIn()) {
                             <h3>Tata Usaha</h3>
                         </a>
                     </div>
+                    <div class="category-row">
+                        <a href="<?php echo BASE_URL; ?>/pages/category/dokumentasi" class="category-card">
+                            <i class="fas fa-photo-video" style="color: #f97316;"></i>
+                            <h3>Dokumentasi</h3>
+                        </a>
+                    </div>
                 </div>
                 
                 <div class="quick-actions">
