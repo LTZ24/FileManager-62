@@ -95,8 +95,7 @@ class UploadManager {
         // Upload section is now static in header.php, just get reference to the list element
         this.notificationDropdown = document.getElementById('uploadDropdownList');
     }
-    }
-
+    
     mergeRemoteState(items) {
         // items: [{id,name,size,category,status,progress,error}]
         let changed = false;
