@@ -689,7 +689,7 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                                                 <img src="<?php echo $file['iconLink']; ?>" alt="" class="file-icon">
                                                 <div class="file-details">
                                                     <span class="file-name"><?php echo htmlspecialchars($file['name']); ?></span>
-                                                    <span class="file-meta"><?php echo formatFileSize($file['size']); ?> • <?php echo formatDateTime($file['modifiedTime']); ?></span>
+                                                    <span class="file-meta"><?php echo formatFileSize($file['size']); ?> • <?php echo htmlspecialchars($file['categoryName']); ?> • <?php echo formatDateTime($file['modifiedTime']); ?></span>
                                                 </div>
                                             </div>
                                         </td>
@@ -709,12 +709,7 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                                                    title="Lihat">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="<?php echo $file['webViewLink']; ?>" 
-                                                   target="_blank" 
-                                                   class="btn btn-success btn-icon" 
-                                                   title="Download">
-                                                    <i class="fas fa-download"></i>
-                                                </a>
+                                                <!-- download removed per UX request -->
                                                                 <button type="button"
                                                                     class="btn btn-danger btn-icon"
                                                                     title="Hapus"
@@ -868,7 +863,7 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                                 <img src="${iconLink}" alt="" class="file-icon">
                                 <div class="file-details">
                                     <span class="file-name">${name}</span>
-                                    <span class="file-meta">${escapeHtml(file.sizeFormatted || '0 Bytes')} • ${escapeHtml(file.modifiedFormatted || '-')}</span>
+                                    <span class="file-meta">${escapeHtml(file.sizeFormatted || '0 Bytes')} • ${escapeHtml(file.categoryName || '-') } • ${escapeHtml(file.modifiedFormatted || '-')}</span>
                                 </div>
                             </div>
                         </td>
@@ -883,7 +878,7 @@ $selectedCategory = isset($categoryMap[$categoryParam]) ? $categoryMap[$category
                         <td>
                             <div class="file-actions">
                                 <a href="${webViewLink}" target="_blank" class="btn btn-primary btn-icon" title="Lihat"><i class="fas fa-eye"></i></a>
-                                <a href="${webViewLink}" target="_blank" class="btn btn-success btn-icon" title="Download"><i class="fas fa-download"></i></a>
+                                <!-- download removed per UX request -->
                                 <button type="button" class="btn btn-danger btn-icon" title="Hapus" onclick='deleteDriveFile(${JSON.stringify(file.id)}, ${JSON.stringify(file.name)}, ${JSON.stringify(file.categoryParam)})'>
                                     <i class="fas fa-trash"></i>
                                 </button>
